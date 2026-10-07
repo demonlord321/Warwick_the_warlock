@@ -70,8 +70,8 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `player.py` | grid position + collision check |
 | `game.py` | window, shared story state (`flags`, `chapter`), and the main loop |
 | `states.py` | state stack; exploring, plus a dialogue box pushed on top of it |
-| `dialogue.py` | loads `maps/<chapter>/dialogue.json` and picks the entry for the current flags |
-| `maps/chapter1/dialogue.json` | placeholder lines for the slums NPCs and the locked gate |
+| `dialogue.py` | loads `data/<chapter>/dialogue.json` and picks the entry for the current flags |
+| `data/chapter1/dialogue.json` | placeholder lines for the slums NPCs and the locked gate |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |
 | `validate_maps.py` | standalone checker (plain Python) |
 | `smoke_test.py`, `make_screenshots.py` | headless test + screenshot generator |

@@ -57,13 +57,16 @@ No other characters are used.
   `locked_key` never appears without a `requires_flag`, and, once `dialogue.json` exists, that the
   `locked_key` is a real dialogue key and some dialogue entry `sets` the flag.
   Only lock one side of a pair: the town's cave mouth is locked, the dungeon's way back out is not.
+* `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
+* `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
 
 ## dialogue.json
 
-Each map folder may have a `dialogue.json`. The game loads the one for `settings.CHAPTER`
-(`maps/chapter1/dialogue.json`). The validator looks in the map folder first, then `data/`,
-then the project root. Once the file is there it also checks that every NPC `dialogue_key`
-exists in it.
+Chapter dialogue lives in `data/<chapter>/dialogue.json` (Chapter 1: `data/chapter1/dialogue.json`,
+next to `intro.json`). The game loads that file for `settings.CHAPTER`. The validator looks in the
+map folder first, then `data/<chapter>/`, then `data/`, then the project root. Once a file is
+there it checks that every NPC `dialogue_key` and every door `locked_key` exist in it, and that
+some entry `sets` each door's `requires_flag`.
 
 A key maps to a list of entries. The first entry whose `requires` are all true is the one
 that plays, so put the specific "after" entry before the "before" entry with `"requires": []`.
@@ -78,8 +81,6 @@ that plays, so put the specific "after" entry before the "before" entry with `"r
 ```
 
 `sets` is the list of flags turned on when that conversation finishes.
-* `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
-* `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
 
 ## Optional `theme`
 

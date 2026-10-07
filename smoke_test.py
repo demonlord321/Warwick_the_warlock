@@ -126,8 +126,11 @@ def finish_dialogue(game):
 
 def check_dialogue_picking():
     """The first entry whose requires are all met is the one that plays."""
-    from dialogue import load_dialogue, pick_entry
+    from dialogue import dialogue_path, load_dialogue, pick_entry
 
+    path = dialogue_path()
+    assert path.endswith(os.path.join("data", "chapter1", "dialogue.json")), path
+    assert os.path.exists(path), path
     data = load_dialogue()
     before = pick_entry(data["beggar_plea"], {})
     assert before["requires"] == []

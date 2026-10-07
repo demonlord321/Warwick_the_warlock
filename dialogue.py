@@ -1,4 +1,4 @@
-"""Load maps/<chapter>/dialogue.json and choose which entry to play.
+"""Load data/<chapter>/dialogue.json and choose which entry to play.
 
 A key (an NPC's dialogue_key, or a door's locked_key) maps to a list of
 entries. Each entry looks like:
@@ -20,10 +20,10 @@ import settings
 
 
 def dialogue_path(chapter=None):
-    """maps/<chapter>/dialogue.json. chapter defaults to settings.CHAPTER."""
+    """data/<chapter>/dialogue.json. chapter defaults to settings.CHAPTER."""
     if chapter is None:
         chapter = settings.CHAPTER
-    return os.path.join(settings.MAPS_ROOT, chapter, "dialogue.json")
+    return os.path.join(settings.DATA_ROOT, chapter, "dialogue.json")
 
 
 def load_dialogue(chapter=None):
