@@ -1,0 +1,174 @@
+"""State stack: input, update, and draw go to whichever state is on top.
+
+Exploring is the state that exists today. Dialogue (and later battle) get
+pushed on top of it, so the map stays up underneath and the player can't
+walk while another state is active. Smooth movement is parked; see PLAN.md.
+"""
+import random
+
+import pygame
+
+import settings
+from render import draw_map, draw_player
+
+
+class State:
+    """One mode of play. Subclasses fill in handle_input, update, and draw."""
+
+    def __init__(self, game):
+        self.game = game
+
+    def on_enter(self):
+        pass
+
+    def on_exit(self):
+        pass
+
+    def handle_input(self, events):
+        """Handle this frame's events. Return False to quit the game."""
+        for event in events:
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return False
+        return True
+
+    def update(self, dt):
+        pass
+
+    def draw(self, screen):
+        pass
+
+
+class StateStack:
+    """The states currently in play. The last one pushed is the active state."""
+
+    def __init__(self):
+        self.states = []
+
+    def push(self, state):
+        self.states.append(state)
+        state.on_enter()
+
+    def pop(self):
+        # Exploring sits at the bottom for the whole session. Popping it would
+        # leave the game with nothing to draw or take input.
+        if len(self.states) <= 1:
+            raise RuntimeError("can't pop the last state")
+        state = self.states.pop()
+        state.on_exit()
+        return state
+
+    def top(self):
+        return self.states[-1]
+
+    def handle_input(self, events):
+        return self.top().handle_input(events)
+
+    def update(self, dt):
+        self.top().update(dt)
+
+    def draw(self, screen):
+        # Bottom to top, so a state pushed later (the dialogue box) paints
+        # over the map without having to know how the map is drawn.
+        for state in self.states:
+            state.draw(screen)
+
+
+class ExploreState(State):
+    """Walking the map: tile steps, doors, and the placeholder interactions."""
+
+    def __init__(self, game):
+        super().__init__(game)
+        self.last_move = 0
+
+    def handle_input(self, events):
+        if not super().handle_input(events):
+            return False
+
+        now = pygame.time.get_ticks()
+        if now - self.last_move < settings.MOVE_DELAY_MS:
+            return True
+        keys = pygame.key.get_pressed()
+        dx = dy = 0
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            dx = -1
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            dx = 1
+        elif keys[pygame.K_UP] or keys[pygame.K_w]:
+            dy = -1
+        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            dy = 1
+        if dx or dy:
+            self.step(dx, dy)
+            self.last_move = now
+        return True
+
+    def step(self, dx, dy):
+        """Try to move one tile and react to whatever is there."""
+        game = self.game
+        target = (game.player.x + dx, game.player.y + dy)
+        tile = game.current.tile_at(*target)
+
+        # Bumping into things you can interact with.
+        if tile == "N":
+            npc = game.current.npcs.get(target, {})
+            game.show(f"{npc.get('id', 'NPC')}: [dialogue '{npc.get('dialogue_key', '?')}']")
+            return
+        if tile == "C":
+            key = (game.current.name, *target)
+            if key in game.opened_chests:
+                game.show("The chest is empty.")
+            else:
+                game.opened_chests.add(key)
+                game.show("You opened the chest! (item placeholder)")
+            return
+
+        # Locked doors (need a story flag) block you like a wall.
+        if tile == "D":
+            door = game.current.doors[target]
+            if game.current.door_locked(door, game.flags):
+                game.show(f"It's locked. [dialogue '{door.get('locked_key', '?')}']")
+                return
+
+        if not game.player.try_move(dx, dy, game.current):
+            return  # blocked by a wall, tree, water...
+
+        here = (game.player.x, game.player.y)
+        if tile == "D":
+            self.change_map(game.current.doors[here])
+        elif tile == "S":
+            game.show("Game saved. (placeholder)")
+        elif tile == "B" and game.current.boss:
+            game.show(f"BOSS BATTLE: {game.current.boss['enemy_id']}! (placeholder)")
+        elif tile == "g":
+            enc = game.current.encounters
+            if enc["enemy_pool"] and random.random() < enc["rate"]:
+                game.show(f"Encounter! A wild {random.choice(enc['enemy_pool'])} appears!")
+
+    def change_map(self, door):
+        game = self.game
+        game.current = game.get_map(door["target_map"])
+        game.player.x, game.player.y = door["spawn_x"], door["spawn_y"]
+        game.show(f"Entered {game.current.display_name}")
+
+    def draw(self, screen):
+        game = self.game
+        game.camera.follow(game.player.x, game.player.y, game.current)
+        draw_map(screen, game.current, game.camera.x, game.camera.y, game.opened_chests)
+        draw_player(screen, game.player.x, game.player.y, game.camera.x, game.camera.y)
+
+        # Map name label (top-left)
+        label = game.font.render(game.current.display_name, True, (255, 255, 255))
+        bg = pygame.Rect(8, 8, label.get_width() + 16, label.get_height() + 10)
+        pygame.draw.rect(screen, (0, 0, 0), bg)
+        pygame.draw.rect(screen, (255, 255, 255), bg, 2)
+        screen.blit(label, (16, 13))
+
+        # Short banner (bottom) for chests, locked doors, and other one-liners.
+        if game.message and pygame.time.get_ticks() < game.message_until:
+            box = pygame.Rect(20, settings.SCREEN_HEIGHT - 70, settings.SCREEN_WIDTH - 40, 50)
+            pygame.draw.rect(screen, (0, 0, 0), box)
+            pygame.draw.rect(screen, (255, 255, 255), box, 2)
+            text = game.font.render(game.message, True, (255, 255, 255))
+            screen.blit(text, (box.x + 14, box.y + 15))

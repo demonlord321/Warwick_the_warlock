@@ -22,7 +22,7 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 
 **M1: World and movement**
 - [x] Window and 60 FPS game loop
-- [ ] State manager (overworld / dialogue / battle / menu), Developer
+- [x] State manager (overworld / dialogue / battle / menu), Developer
 - [x] Text maps parsed and drawn as coloured tiles
 - [x] Tile-by-tile movement with wall collision
 - [x] Camera that follows the player and clamps at the edges

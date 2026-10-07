@@ -44,7 +44,7 @@ def walk_through_door(game, door_xy):
     src = game.current
     door = src.doors[door_xy]
     for dx, dy in path_to(src, (game.player.x, game.player.y), door_xy):
-        game.step(dx, dy)
+        game.explore.step(dx, dy)
         game.draw()
     assert game.current.name == door["target_map"], (game.current.name, door)
     assert (game.player.x, game.player.y) == (door["spawn_x"], door["spawn_y"])
@@ -57,9 +57,9 @@ def check_gate_lock(game, door_xy, flag):
     assert not game.flags.get(flag)
     steps = path_to(game.current, (game.player.x, game.player.y), door_xy)
     for dx, dy in steps[:-1]:
-        game.step(dx, dy)
+        game.explore.step(dx, dy)
     before = (game.current.name, game.player.x, game.player.y)
-    game.step(*steps[-1])
+    game.explore.step(*steps[-1])
     assert (game.current.name, game.player.x, game.player.y) == before, "door should be locked"
     assert "locked" in game.message.lower(), game.message
     print(f"  {game.current.name} {door_xy} locked without '{flag}'  OK")
@@ -82,6 +82,9 @@ def main():
     game = Game()
     print("start:", game.current.name, game.current.player_start)
     assert game.current.name == settings.START_MAP
+    assert game.states.top() is game.explore
+    assert game.chapter == settings.CHAPTER
+    assert game.flags == {}
 
     # Chapter 1 route: the alley gate is locked until its flag is set.
     check_gate_lock(game, (39, 15), "slums_gate_open")
@@ -98,7 +101,7 @@ def main():
                 nx, ny = door_xy[0] - dx, door_xy[1] - dy
                 if game.current.is_walkable(nx, ny) and game.current.tile_at(nx, ny) != "D":
                     game.player.x, game.player.y = nx, ny
-                    game.step(dx, dy)
+                    game.explore.step(dx, dy)
                     break
             assert game.current.name == door["target_map"]
     print("all doors work from a neighbouring tile")
@@ -107,12 +110,12 @@ def main():
     for map_name, stand, step in (("slums1", (11, 28), (-1, 0)), ("slums2", (16, 2), (1, 0))):
         game.current = game.get_map(map_name)
         game.player.x, game.player.y = stand
-        game.step(*step)
+        game.explore.step(*step)
         chest = (map_name, stand[0] + step[0], stand[1] + step[1])
         assert chest in game.opened_chests, chest
     game.current = game.get_map("slums1")
     game.player.x, game.player.y = 17, 2
-    game.step(0, 1)
+    game.explore.step(0, 1)
     assert "beggar" in game.message, game.message
     pygame.quit()
     print("SMOKE TEST PASSED")
