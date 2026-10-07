@@ -16,15 +16,28 @@ Settings: 32px tiles, 800x600 window (see `settings.py`).
 
 ```bash
 pip install pygame            # add --break-system-packages on some Linux systems
-python game.py                # play: arrows/WASD to move, Esc to quit
+python game.py                # title: up/down, Z/Enter. In game: move, Z talks, F1 flags, Esc back to title
 python view_map.py slums1     # look at one map (arrow keys scroll); parked/town for parked maps
 python validate_maps.py       # check all maps for mistakes
 python smoke_test.py          # headless play-through of every door
 python make_screenshots.py    # regenerate screenshots/*.png
 ```
 
-In the demo: walk into an NPC to see its dialogue key, walk into a chest to open it,
-step on a save point / boss tile for a placeholder message, and grass (`g`) may
+The game opens on a title screen (New Game, Load Game, Quit). New Game clears
+the flags, plays the chapter intro (`data/chapter1/intro.json`), then starts in
+the slums. Z finishes the current intro page or advances it; Esc skips the rest
+and drops you in `slums1`. Load Game skips the intro. Esc while exploring
+returns to the title; Quit exits.
+Load Game stays grey until a save exists. Stepping on a save point (`S`) writes
+`save.json` (chapter, map, position, flags) and says "Game saved." in the dialogue
+box. Load Game restores that exactly. `save.json` is gitignored.
+
+In the demo: walk into an NPC to talk. Z finishes the current line or advances to
+the next, and the box closes after the last one. That NPC's `sets` flags turn on
+when the box closes (the gate watcher sets `slums_gate_open`, which unlocks the
+east gate). Bump the locked gate to read `slums_gate_locked` in the same box.
+F1 prints the flags dict. Walk into a chest to open it,
+step on a save point to save, step on a boss tile for a placeholder message, and grass (`g`) may
 trigger a placeholder "Encounter!" message. Messages are also printed to the terminal.
 
 ## Chapter 1 maps (`maps/chapter1/`, dark "slums" palette)
@@ -64,7 +77,13 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `camera.py` | follows the player, clamps at edges, centres small maps |
 | `render.py` | draws tiles and the player |
 | `player.py` | grid position + collision check |
-| `game.py` | the demo game loop (doors, NPCs, chests, encounters) |
+| `game.py` | window, shared story state (`flags`, `chapter`), and the main loop |
+| `states.py` | state stack: title screen, exploring, and the dialogue box |
+| `save_load.py` | writes and reads `save.json` (used by save points and Load Game) |
+| `dialogue.py` | loads `data/<chapter>/dialogue.json` and picks the entry for the current flags |
+| `intro.py` | loads `data/<chapter>/intro.json` (title card and story pages) |
+| `data/chapter1/dialogue.json` | placeholder before/after lines for the slums NPCs, and the locked gate |
+| `data/chapter1/intro.json` | draft chapter intro: title and pages |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |
 | `validate_maps.py` | standalone checker (plain Python) |
 | `smoke_test.py`, `make_screenshots.py` | headless test + screenshot generator |

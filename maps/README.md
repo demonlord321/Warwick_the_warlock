@@ -54,11 +54,33 @@ No other characters are used.
   `"requires_flag": "talked_to_elder"` (the door won't open until `flags["talked_to_elder"]` is true)
   and `"locked_key": "cave_locked"` (the `dialogue.json` key shown when you bump the locked door).
   A locked door blocks you like a wall. The validator checks both are non-empty strings, that a
-  `locked_key` never appears without a `requires_flag`, and, once `dialogue.json` exists (project root
-  or `data/`), that the `locked_key` is a real dialogue key and some dialogue entry `sets` the flag.
+  `locked_key` never appears without a `requires_flag`, and, once `dialogue.json` exists, that the
+  `locked_key` is a real dialogue key and some dialogue entry `sets` the flag.
   Only lock one side of a pair: the town's cave mouth is locked, the dungeon's way back out is not.
 * `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
 * `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
+
+## dialogue.json
+
+Chapter dialogue lives in `data/<chapter>/dialogue.json` (Chapter 1: `data/chapter1/dialogue.json`,
+next to `intro.json`). The game loads that file for `settings.CHAPTER`. The validator looks in the
+map folder first, then `data/<chapter>/`, then `data/`, then the project root. Once a file is
+there it checks that every NPC `dialogue_key` and every door `locked_key` exist in it, and that
+some entry `sets` each door's `requires_flag`.
+
+A key maps to a list of entries. The first entry whose `requires` are all true is the one
+that plays, so put the specific "after" entry before the "before" entry with `"requires": []`.
+
+```json
+{
+  "beggar_plea": [
+    {"requires": ["slums_gate_open"], "sets": [], "lines": ["Beggar: Gate's open. (placeholder)"]},
+    {"requires": [], "sets": [], "lines": ["Beggar: Spare a coin? (placeholder)"]}
+  ]
+}
+```
+
+`sets` is the list of flags turned on when that conversation finishes.
 
 ## Optional `theme`
 

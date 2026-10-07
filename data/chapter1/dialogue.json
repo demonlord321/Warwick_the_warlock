@@ -1,0 +1,116 @@
+{
+  "slums_gate_locked": [
+    {
+      "requires": [],
+      "sets": [],
+      "lines": [
+        "The gate is locked. The main road is on the other side."
+      ]
+    }
+  ],
+  "beggar_plea": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Beggar: Gate's open, and I'm still sitting here. Figures. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": [
+        "Beggar: Spare a coin? The gate watcher won't let anyone through.",
+        "Beggar: Talk to him if you want the road. (placeholder)"
+      ]
+    }
+  ],
+  "urchin_rumour": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Urchin: You got past the gate? Tell me if the fruit's any good. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": [
+        "Urchin: The watcher at the east gate opens it for some people.",
+        "Urchin: Not for me. (placeholder)"
+      ]
+    }
+  ],
+  "drunk_ramble": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Drunk: Road's open? I'll get there. Eventually. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": ["Drunk: Main road's shut. More for the puddles, then. (placeholder)"]
+    }
+  ],
+  "gate_watcher_warning": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Gate watcher: I already opened it. Go on through. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": ["slums_gate_open"],
+      "lines": [
+        "Gate watcher: You want the main road? ...Fine.",
+        "Gate watcher: The gate is open. Don't make me regret it. (placeholder)"
+      ]
+    }
+  ],
+  "fruit_seller_haggle": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Fruit seller: Back again? The apples are still mostly apples. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": ["Fruit seller: Three coins. Or two, if you don't look too close. (placeholder)"]
+    }
+  ],
+  "guard_patrol": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Street guard: Alleys let you out, did they? Keep walking. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": ["Street guard: Move along. Nothing on this road is free. (placeholder)"]
+    }
+  ],
+  "old_woman_warning": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Old woman: You came from the alleys. Mind the rubble. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": ["Old woman: Don't go east. The wall there doesn't open. (placeholder)"]
+    }
+  ],
+  "thug_threat": [
+    {
+      "requires": ["slums_gate_open"],
+      "sets": [],
+      "lines": ["Thug: Gate's open and you're still broke. Tough. (placeholder)"]
+    },
+    {
+      "requires": [],
+      "sets": [],
+      "lines": ["Thug: Empty your pockets. Joke. I've got nothing either. (placeholder)"]
+    }
+  ]
+}
