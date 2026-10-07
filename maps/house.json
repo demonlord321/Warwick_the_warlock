@@ -1,0 +1,11 @@
+{
+  "display_name": "Your House",
+  "doors": [
+    {"x": 10, "y": 14, "target_map": "town", "spawn_x": 9, "spawn_y": 12}
+  ],
+  "npcs": [
+    {"x": 6, "y": 5, "id": "mom", "dialogue_key": "mom_morning"}
+  ],
+  "encounters": {"rate": 0.0, "enemy_pool": []},
+  "boss": null
+}

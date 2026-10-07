@@ -1,0 +1,15 @@
+{
+  "display_name": "Willowbrook Village",
+  "doors": [
+    {"x": 9,  "y": 11, "target_map": "house",   "spawn_x": 10, "spawn_y": 13},
+    {"x": 19, "y": 1,  "target_map": "dungeon", "spawn_x": 7,  "spawn_y": 28}
+  ],
+  "npcs": [
+    {"x": 21, "y": 4,  "id": "cave_guard",  "dialogue_key": "guard_warning"},
+    {"x": 29, "y": 12, "id": "shopkeeper",  "dialogue_key": "shop_closed"},
+    {"x": 24, "y": 16, "id": "elder",       "dialogue_key": "elder_intro"},
+    {"x": 14, "y": 24, "id": "village_kid", "dialogue_key": "kid_grass_tip"}
+  ],
+  "encounters": {"rate": 0.08, "enemy_pool": ["slime", "field_rat"]},
+  "boss": null
+}
