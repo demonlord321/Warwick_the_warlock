@@ -9,6 +9,7 @@ import random
 import pygame
 
 import settings
+from dialogue import pick_entry
 from render import draw_map, draw_player
 
 
@@ -229,7 +230,11 @@ class ExploreState(State):
         if tile == "D":
             door = game.current.doors[target]
             if game.current.door_locked(door, game.flags):
-                game.show(f"It's locked. [dialogue '{door.get('locked_key', '?')}']")
+                locked_key = door.get("locked_key")
+                if locked_key:
+                    self.start_dialogue(locked_key)
+                else:
+                    game.show("It's locked.")
                 return
 
         if not game.player.try_move(dx, dy, game.current):
@@ -246,6 +251,19 @@ class ExploreState(State):
             enc = game.current.encounters
             if enc["enemy_pool"] and random.random() < enc["rate"]:
                 game.show(f"Encounter! A wild {random.choice(enc['enemy_pool'])} appears!")
+
+    def start_dialogue(self, key):
+        """Open the box for this key, using the first entry our flags allow."""
+        entries = self.game.dialogue.get(key)
+        if not entries:
+            self.game.show(f"[no dialogue '{key}']")
+            return
+        entry = pick_entry(entries, self.game.flags)
+        if entry is None:
+            self.game.show(f"[no matching dialogue '{key}']")
+            return
+        self.game.message = ""
+        self.game.states.push(DialogueState(self.game, entry["lines"]))
 
     def change_map(self, door):
         game = self.game

@@ -112,6 +112,47 @@ def check_dialogue_box(game):
     print("dialogue box OK")
 
 
+def finish_dialogue(game):
+    """Press Z until the open box closes (finish the line, then advance)."""
+    from states import DialogueState
+    state = game.states.top()
+    assert isinstance(state, DialogueState), type(state)
+    guard = 0
+    while game.states.top() is state:
+        state.advance()
+        guard += 1
+        assert guard < 50, "dialogue did not close"
+
+
+def check_dialogue_picking():
+    """The first entry whose requires are all met is the one that plays."""
+    from dialogue import load_dialogue, pick_entry
+
+    data = load_dialogue()
+    before = pick_entry(data["beggar_plea"], {})
+    assert before["requires"] == []
+    after = pick_entry(data["beggar_plea"], {"slums_gate_open": True})
+    assert "slums_gate_open" in after["requires"]
+    assert after is not before
+
+    watcher = pick_entry(data["gate_watcher_warning"], {})
+    assert "slums_gate_open" in watcher["sets"]
+    again = pick_entry(data["gate_watcher_warning"], {"slums_gate_open": True})
+    assert "slums_gate_open" not in again["sets"]
+
+    locked = pick_entry(data["slums_gate_locked"], {})
+    assert any("locked" in line.lower() for line in locked["lines"])
+
+    assert pick_entry([{"requires": ["nope"], "sets": [], "lines": ["x"]}], {}) is None
+    entries = [
+        {"requires": ["slums_gate_open"], "sets": [], "lines": ["after"]},
+        {"requires": [], "sets": [], "lines": ["before"]},
+    ]
+    assert pick_entry(entries, {})["lines"] == ["before"]
+    assert pick_entry(entries, {"slums_gate_open": True})["lines"] == ["after"]
+    print("dialogue picking OK")
+
+
 def check_gate_lock(game, door_xy, flag):
     """A flag-gated door stays shut (player doesn't move) until its flag is set."""
     assert not game.flags.get(flag)
@@ -121,13 +162,19 @@ def check_gate_lock(game, door_xy, flag):
     before = (game.current.name, game.player.x, game.player.y)
     game.explore.step(*steps[-1])
     assert (game.current.name, game.player.x, game.player.y) == before, "door should be locked"
-    assert "locked" in game.message.lower(), game.message
+    from states import DialogueState
+    state = game.states.top()
+    assert isinstance(state, DialogueState), type(state)
+    assert any("locked" in line.lower() for line in state.lines), state.lines
+    finish_dialogue(game)
+    assert game.states.top() is game.explore
     print(f"  {game.current.name} {door_xy} locked without '{flag}'  OK")
     game.flags[flag] = True  # stand-in for the story beat that sets it
 
 
 def main():
     random.seed(1)
+    check_dialogue_picking()
     # Every map in every folder must load.
     for folder in sorted(os.listdir(settings.MAPS_ROOT)):
         maps_dir = os.path.join(settings.MAPS_ROOT, folder)

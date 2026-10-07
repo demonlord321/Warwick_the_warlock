@@ -1,7 +1,7 @@
 """Warwick the Warlock — overworld demo.
 
 Run:  python game.py
-Keys: arrows / WASD to move, Esc to quit.
+Keys: arrows / WASD to move, Z to advance dialogue, Esc to quit.
 
 Game owns the window and the shared story state (flags and chapter — the
 bits a save file will hold later). Input, update, and draw go through the
@@ -13,6 +13,7 @@ import pygame
 
 import settings
 from camera import Camera
+from dialogue import load_dialogue
 from map_loader import GameMap
 from player import Player
 from states import ExploreState, StateStack
@@ -33,6 +34,7 @@ class Game:
         # chapter: which maps/<folder> we are playing.
         self.flags = {}
         self.chapter = settings.CHAPTER
+        self.dialogue = load_dialogue(self.chapter)
 
         self.maps = {}               # cache: name -> GameMap
         self.opened_chests = set()   # (map_name, x, y)

@@ -16,6 +16,8 @@ Checks:
   * locked doors: "requires_flag" / "locked_key" are non-empty strings, a
     locked_key only appears with a requires_flag, and (once dialogue.json exists)
     the locked_key is a real dialogue key and some dialogue entry sets the flag
+  * once dialogue.json exists, every NPC dialogue_key is a key in that file,
+    and each entry has requires / sets / lines
   * NPC / boss coordinates match 'N' / 'B' tiles (and vice versa)
   * exactly one 'P', and it is in the start map
   * every door, save point, boss, chest and NPC can actually be reached
@@ -54,6 +56,42 @@ def load_dialogue(maps_dir):
             with open(path, encoding="utf-8") as f:
                 return path, json.load(f)
     return None, None
+
+
+def name_list(value, allow_empty):
+    """True when value is a list of non-empty strings (empty list only if allowed)."""
+    if not isinstance(value, list):
+        return False
+    if not value and not allow_empty:
+        return False
+    return all(isinstance(item, str) and item for item in value)
+
+
+def check_dialogue_shape(dialogue, path, errors):
+    """Each key is a list of {requires, sets, lines} entries."""
+    label = os.path.basename(path)
+    if not isinstance(dialogue, dict):
+        errors.append(f"{label}: must be a JSON object of dialogue_key -> [entries]")
+        return
+    for key, entries in dialogue.items():
+        if not isinstance(entries, list) or not entries:
+            errors.append(f"{label}: '{key}' must be a non-empty list of entries")
+            continue
+        for i, entry in enumerate(entries):
+            where = f"{label}: '{key}' entry {i}"
+            if not isinstance(entry, dict):
+                errors.append(f"{where} must be an object")
+                continue
+            for field in ("requires", "sets", "lines"):
+                if field not in entry:
+                    errors.append(f"{where} is missing '{field}'")
+            if "requires" in entry and not name_list(entry.get("requires"), allow_empty=True):
+                errors.append(f"{where}: requires must be a list of flag names")
+            sets = entry.get("sets")
+            if "sets" in entry and not (name_list(sets, allow_empty=True) or isinstance(sets, dict)):
+                errors.append(f"{where}: sets must be a list of flag names")
+            if "lines" in entry and not name_list(entry.get("lines"), allow_empty=False):
+                errors.append(f"{where}: lines must be a non-empty list of strings")
 
 
 def flags_set_by(dialogue):
@@ -125,6 +163,10 @@ def validate(maps_dir):
     START_MAP = starts_with_p[0]
 
     dialogue_path, dialogue = load_dialogue(maps_dir)
+    if dialogue is not None:
+        check_dialogue_shape(dialogue, dialogue_path, errors)
+        if not isinstance(dialogue, dict):
+            return errors, warnings
     settable = flags_set_by(dialogue)
 
     p_count = 0
@@ -215,6 +257,14 @@ def validate(maps_dir):
             err(f"'N' at {pos} has no JSON npc entry")
         for pos in npc_pos - n_tiles:
             err(f"JSON npc at {pos} is not on an 'N' tile")
+        if dialogue is not None:
+            for n in meta.get("npcs", []):
+                key = n.get("dialogue_key")
+                who = n.get("id", str((n.get("x"), n.get("y"))))
+                if not isinstance(key, str) or not key:
+                    err(f"npc '{who}' needs a dialogue_key")
+                elif key not in dialogue:
+                    err(f"npc '{who}' dialogue_key '{key}' is not in {os.path.basename(dialogue_path)}")
         b_tiles = tiles_of(rows, "B")
         boss = meta.get("boss")
         boss_pos = {(boss["x"], boss["y"])} if boss else set()
