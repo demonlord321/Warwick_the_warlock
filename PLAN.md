@@ -35,7 +35,7 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [ ] `dialogue.json` + loader (`requires` / `sets` / `lines`), Developer
 - [ ] Flags dict hooked up to NPCs, plus a debug key, Developer
 - [x] Flag-gated doors (`requires_flag`, `locked_key`), Mapmaker
-- [ ] Chapter 1 maps: `slums1` (alleyways) and `slums2` (main road), Mapmaker
+- [x] Chapter 1 maps: `slums1` (alleyways) and `slums2` (main road), Mapmaker. Gate on the east wall of slums1 uses placeholder flag `slums_gate_open` (message `slums_gate_locked`); rename once beats are set
 - [ ] Chapter 1 dialogue chain for the slums NPCs, Planner drafts, Dyllan approves
 - [ ] Smoke tests for flags and locks
 
@@ -63,4 +63,4 @@ chapter is stored in the game state next to `flags`.
 
 ## Parked
 - The original prototype maps (Willowbrook, house, Mossy Caverns, Warden's
-  Chamber) were placeholders. Keep them for testing or reuse them in a later chapter.
+  Chamber) now live in `maps/parked/` for testing or reuse in a later chapter.
