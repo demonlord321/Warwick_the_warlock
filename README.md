@@ -16,16 +16,18 @@ Settings: 32px tiles, 800x600 window (see `settings.py`).
 
 ```bash
 pip install pygame            # add --break-system-packages on some Linux systems
-python game.py                # play: arrows/WASD to move, Esc to quit
+python game.py                # play: arrows/WASD to move, Z advances dialogue, F1 prints flags, Esc to quit
 python view_map.py slums1     # look at one map (arrow keys scroll); parked/town for parked maps
 python validate_maps.py       # check all maps for mistakes
 python smoke_test.py          # headless play-through of every door
 python make_screenshots.py    # regenerate screenshots/*.png
 ```
 
-In the demo: walk into an NPC to see its dialogue key, bump the locked east gate to
-read `slums_gate_locked` in the dialogue box (Z finishes a line or advances it),
-walk into a chest to open it,
+In the demo: walk into an NPC to talk. Z finishes the current line or advances to
+the next, and the box closes after the last one. That NPC's `sets` flags turn on
+when the box closes (the gate watcher sets `slums_gate_open`, which unlocks the
+east gate). Bump the locked gate to read `slums_gate_locked` in the same box.
+F1 prints the flags dict. Walk into a chest to open it,
 step on a save point / boss tile for a placeholder message, and grass (`g`) may
 trigger a placeholder "Encounter!" message. Messages are also printed to the terminal.
 

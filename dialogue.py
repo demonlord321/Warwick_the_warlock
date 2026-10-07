@@ -38,3 +38,14 @@ def pick_entry(entries, flags):
         if all(flags.get(name) for name in required):
             return entry
     return None
+
+
+def flags_to_set(entry):
+    """Flag names this entry turns on when the box closes.
+
+    `sets` is a list of names, or a dict of name -> true.
+    """
+    sets = entry.get("sets") or []
+    if isinstance(sets, dict):
+        return [name for name, on in sets.items() if on]
+    return list(sets)

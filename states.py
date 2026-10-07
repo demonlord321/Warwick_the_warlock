@@ -9,7 +9,7 @@ import random
 import pygame
 
 import settings
-from dialogue import pick_entry
+from dialogue import flags_to_set, pick_entry
 from render import draw_map, draw_player
 
 
@@ -32,6 +32,8 @@ class State:
                 return False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 return False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                print(f"flags: {self.game.flags}  chapter: {self.game.chapter}")
         return True
 
     def update(self, dt):
@@ -110,6 +112,10 @@ class DialogueState(State):
         self.chars_shown = 0
         self.acc_ms = 0
         self.on_close = on_close
+
+    def on_enter(self):
+        for line in self.lines:
+            print(line)
 
     def handle_input(self, events):
         if not super().handle_input(events):
@@ -215,7 +221,11 @@ class ExploreState(State):
         # Bumping into things you can interact with.
         if tile == "N":
             npc = game.current.npcs.get(target, {})
-            game.show(f"{npc.get('id', 'NPC')}: [dialogue '{npc.get('dialogue_key', '?')}']")
+            key = npc.get("dialogue_key")
+            if key:
+                self.start_dialogue(key)
+            else:
+                game.show(f"{npc.get('id', 'NPC')}: (no dialogue_key)")
             return
         if tile == "C":
             key = (game.current.name, *target)
@@ -262,8 +272,15 @@ class ExploreState(State):
         if entry is None:
             self.game.show(f"[no matching dialogue '{key}']")
             return
+        # Remember the flags now; they flip when the box closes, not when it opens.
+        to_set = flags_to_set(entry)
+
+        def apply_sets():
+            for flag in to_set:
+                self.game.flags[flag] = True
+
         self.game.message = ""
-        self.game.states.push(DialogueState(self.game, entry["lines"]))
+        self.game.states.push(DialogueState(self.game, entry["lines"], on_close=apply_sets))
 
     def change_map(self, door):
         game = self.game

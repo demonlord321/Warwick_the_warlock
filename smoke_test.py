@@ -169,7 +169,57 @@ def check_gate_lock(game, door_xy, flag):
     finish_dialogue(game)
     assert game.states.top() is game.explore
     print(f"  {game.current.name} {door_xy} locked without '{flag}'  OK")
-    game.flags[flag] = True  # stand-in for the story beat that sets it
+
+
+def bump(game, target_xy):
+    """Walk beside target_xy and step onto it (an NPC, chest, or door)."""
+    src = game.current
+    start = (game.player.x, game.player.y)
+    for dx, dy in DIRS:
+        stand = (target_xy[0] - dx, target_xy[1] - dy)
+        if not src.is_walkable(*stand) or src.tile_at(*stand) == "D":
+            continue
+        try:
+            steps = path_to(src, start, stand)
+        except AssertionError:
+            continue
+        for sdx, sdy in steps:
+            game.explore.step(sdx, sdy)
+        game.explore.step(dx, dy)
+        return
+    raise AssertionError(f"no path to bump {target_xy} in {src.name}")
+
+
+def open_gate_by_talking(game, flag):
+    """The NPC whose current entry sets `flag` does so when their box closes."""
+    from dialogue import pick_entry
+
+    found = None
+    for pos, npc in game.current.npcs.items():
+        entry = pick_entry(game.dialogue[npc["dialogue_key"]], game.flags)
+        if entry and flag in (entry.get("sets") or []):
+            found = (pos, npc)
+            break
+    assert found, f"no NPC on {game.current.name} sets {flag}"
+    pos, npc = found
+    bump(game, pos)
+    assert not game.flags.get(flag), "flag waits until the box closes"
+    finish_dialogue(game)
+    assert game.flags.get(flag) is True
+    print(f"  talked to {npc['id']}; '{flag}' set when the box closed  OK")
+
+
+def check_flag_key(game):
+    """F1 prints the flags dict (and the chapter sitting next to it)."""
+    import io
+    from contextlib import redirect_stdout
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F1)])
+    text = buf.getvalue()
+    assert "flags:" in text and "slums_gate_open" in text and game.chapter in text, text
+    print("F1 prints flags OK")
 
 
 def main():
@@ -194,8 +244,10 @@ def main():
     assert game.flags == {}
     check_dialogue_box(game)
 
-    # Chapter 1 route: the alley gate is locked until its flag is set.
+    # Chapter 1 route: the alley gate is locked until an NPC's dialogue sets the flag.
     check_gate_lock(game, (39, 15), "slums_gate_open")
+    open_gate_by_talking(game, "slums_gate_open")
+    check_flag_key(game)
     route = [("slums1", (39, 15)), ("slums2", (0, 10))]
     for map_name, door_xy in route:
         assert game.current.name == map_name, game.current.name
@@ -224,7 +276,11 @@ def main():
     game.current = game.get_map("slums1")
     game.player.x, game.player.y = 17, 2
     game.explore.step(0, 1)
-    assert "beggar" in game.message, game.message
+    from states import DialogueState
+    beggar = game.states.top()
+    assert isinstance(beggar, DialogueState)
+    assert any("beggar" in line.lower() for line in beggar.lines), beggar.lines
+    finish_dialogue(game)
     pygame.quit()
     print("SMOKE TEST PASSED")
 

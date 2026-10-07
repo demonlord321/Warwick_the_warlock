@@ -1,7 +1,7 @@
 """Warwick the Warlock — overworld demo.
 
 Run:  python game.py
-Keys: arrows / WASD to move, Z to advance dialogue, Esc to quit.
+Keys: arrows / WASD to move, Z to advance dialogue, F1 to print flags, Esc to quit.
 
 Game owns the window and the shared story state (flags and chapter — the
 bits a save file will hold later). Input, update, and draw go through the
