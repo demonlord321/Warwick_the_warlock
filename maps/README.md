@@ -1,5 +1,9 @@
 # maps/ — map format
 
+Each sub-folder is one set of maps that link only to each other: `chapter1/` (the slums, played by
+the game) and `parked/` (the original prototype maps). Exactly one map per folder holds the `P`
+start tile. `settings.py` (`CHAPTER`, `START_MAP`) chooses the folder the game plays.
+
 Each map is two files with the same name:
 
 * `<name>.txt` — the tile grid, one character per tile, every row the same width.
@@ -56,7 +60,19 @@ No other characters are used.
 * `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
 * `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
 
-## Current maps
+## Optional `theme`
+
+`"theme": "slums"` in a map's JSON switches to a darker palette (soot brick, wet cobbles, rubble
+for `g`, murky puddles for `~`). It only changes colours, never which tiles are walkable.
+
+## Chapter 1 maps (`chapter1/`)
+
+| File | Name | Size | Connections |
+|------|------|------|-------------|
+| `slums1` | The Slums: Back Alleys | 40x30 | gate (39,15) on east wall, go east ↔ slums2 (locked until `slums_gate_open`, message `slums_gate_locked`) |
+| `slums2` | The Slums: Main Road | 50x22 | west end (0,10), go west ↔ slums1 |
+
+## Parked maps (`parked/`)
 
 | File | Name | Size | Connections |
 |------|------|------|-------------|

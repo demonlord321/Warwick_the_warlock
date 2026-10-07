@@ -52,39 +52,45 @@ def walk_through_door(game, door_xy):
     print(f"  {src.name} {door_xy} -> {game.current.name} at {(game.player.x, game.player.y)}  OK")
 
 
-def check_cave_lock(game, door_xy):
-    """The cave door stays shut until 'talked_to_elder' is set."""
-    assert not game.flags.get("talked_to_elder")
+def check_gate_lock(game, door_xy, flag):
+    """A flag-gated door stays shut (player doesn't move) until its flag is set."""
+    assert not game.flags.get(flag)
     steps = path_to(game.current, (game.player.x, game.player.y), door_xy)
     for dx, dy in steps[:-1]:
         game.step(dx, dy)
-    before = (game.player.x, game.player.y)
+    before = (game.current.name, game.player.x, game.player.y)
     game.step(*steps[-1])
-    assert game.current.name == "town" and (game.player.x, game.player.y) == before, "cave should be locked"
+    assert (game.current.name, game.player.x, game.player.y) == before, "door should be locked"
     assert "locked" in game.message.lower(), game.message
-    print(f"  town {door_xy} locked without 'talked_to_elder'  OK")
-    game.flags["talked_to_elder"] = True  # stand-in for talking to the elder
+    print(f"  {game.current.name} {door_xy} locked without '{flag}'  OK")
+    game.flags[flag] = True  # stand-in for the story beat that sets it
 
 
 def main():
     random.seed(1)
-    names = sorted(f[:-4] for f in os.listdir(settings.MAPS_DIR) if f.endswith(".txt"))
-    for n in names:
-        m = GameMap(n)
-        print(f"loaded {n}: {m.width}x{m.height}, {len(m.doors)} doors, '{m.display_name}'")
+    # Every map in every folder must load.
+    for folder in sorted(os.listdir(settings.MAPS_ROOT)):
+        maps_dir = os.path.join(settings.MAPS_ROOT, folder)
+        if not os.path.isdir(maps_dir):
+            continue
+        for f in sorted(os.listdir(maps_dir)):
+            if f.endswith(".txt"):
+                m = GameMap(f[:-4], maps_dir)
+                print(f"loaded {folder}/{m.name}: {m.width}x{m.height}, {len(m.doors)} doors, '{m.display_name}'")
 
+    names = sorted(f[:-4] for f in os.listdir(settings.MAPS_DIR) if f.endswith(".txt"))
     game = Game()
     print("start:", game.current.name, game.current.player_start)
-    route = [("town", (9, 11)), ("house", (10, 14)), ("town", (19, 1)),
-             ("dungeon", (38, 21)), ("boss_room", (0, 8)), ("dungeon", (7, 29))]
+    assert game.current.name == settings.START_MAP
+
+    # Chapter 1 route: the alley gate is locked until its flag is set.
+    check_gate_lock(game, (39, 15), "slums_gate_open")
+    route = [("slums1", (39, 15)), ("slums2", (0, 10))]
     for map_name, door_xy in route:
         assert game.current.name == map_name, game.current.name
-        if (map_name, door_xy) == ("town", (19, 1)):
-            check_cave_lock(game, door_xy)
         walk_through_door(game, door_xy)
 
-    # Every door in every map, teleporting next to it first (all flags set).
-    game.flags["talked_to_elder"] = True
+    # Every door in the current chapter, teleporting next to it first.
     for n in names:
         for door_xy, door in GameMap(n).doors.items():
             game.current = game.get_map(n)
@@ -97,15 +103,17 @@ def main():
             assert game.current.name == door["target_map"]
     print("all doors work from a neighbouring tile")
 
-    # Interactions: chest in dungeon, boss trigger.
-    game.current = game.get_map("dungeon")
-    game.player.x, game.player.y = 36, 17
-    game.step(0, -1)
-    assert ("dungeon", 36, 16) in game.opened_chests
-    game.current = game.get_map("boss_room")
-    game.player.x, game.player.y = 25, 8
-    game.step(1, 0)
-    assert "BOSS" in game.message
+    # Interactions: a chest in each slums map, and talking to an NPC.
+    for map_name, stand, step in (("slums1", (11, 28), (-1, 0)), ("slums2", (16, 2), (1, 0))):
+        game.current = game.get_map(map_name)
+        game.player.x, game.player.y = stand
+        game.step(*step)
+        chest = (map_name, stand[0] + step[0], stand[1] + step[1])
+        assert chest in game.opened_chests, chest
+    game.current = game.get_map("slums1")
+    game.player.x, game.player.y = 17, 2
+    game.step(0, 1)
+    assert "beggar" in game.message, game.message
     pygame.quit()
     print("SMOKE TEST PASSED")
 

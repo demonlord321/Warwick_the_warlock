@@ -7,5 +7,7 @@ SCREEN_HEIGHT = 600
 FPS = 60
 MOVE_DELAY_MS = 140            # how often the player steps while a key is held
 
-START_MAP = "town"             # map that contains the single 'P' tile
-MAPS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "maps")
+MAPS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "maps")
+CHAPTER = "chapter1"           # which maps/<folder> the game plays
+MAPS_DIR = os.path.join(MAPS_ROOT, CHAPTER)
+START_MAP = "slums1"           # map in that folder with the single 'P' tile

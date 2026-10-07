@@ -1,0 +1,15 @@
+{
+  "display_name": "The Slums: Back Alleys",
+  "theme": "slums",
+  "doors": [
+    {"x": 39, "y": 15, "target_map": "slums2", "spawn_x": 1, "spawn_y": 10, "requires_flag": "slums_gate_open", "locked_key": "slums_gate_locked"}
+  ],
+  "npcs": [
+    {"x": 17, "y": 3, "id": "beggar", "dialogue_key": "beggar_plea"},
+    {"x": 13, "y": 13, "id": "urchin", "dialogue_key": "urchin_rumour"},
+    {"x": 30, "y": 22, "id": "drunk", "dialogue_key": "drunk_ramble"},
+    {"x": 37, "y": 16, "id": "gate_watcher", "dialogue_key": "gate_watcher_warning"}
+  ],
+  "encounters": {"rate": 0.08, "enemy_pool": ["sewer_rat", "alley_cutpurse"]},
+  "boss": null
+}

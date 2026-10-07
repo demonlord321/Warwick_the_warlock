@@ -1,6 +1,11 @@
-# RPG Maps — Milestone 1 demo
+# Warwick the Warlock — maps and engine demo
 
-Four connected maps for a top-down, tile-based RPG (turn-based combat comes later),
+Chapter 1 ("The Master") is set in the slums: `maps/chapter1/slums1` (back alleys) and
+`maps/chapter1/slums2` (the main road). The original four prototype maps live in `maps/parked/`.
+Each sub-folder of `maps/` is one set of maps; `settings.py` picks which one the game plays
+(`CHAPTER`, `START_MAP`).
+
+Below: the map format, plus a small Pygame demo (turn-based combat comes later),
 plus a small Pygame demo: window, game loop, map loading, tile-by-tile movement,
 collision, a camera that follows the player and stops at map edges, and doors.
 All graphics are coloured shapes — no art files needed.
@@ -12,7 +17,7 @@ Settings: 32px tiles, 800x600 window (see `settings.py`).
 ```bash
 pip install pygame            # add --break-system-packages on some Linux systems
 python game.py                # play: arrows/WASD to move, Esc to quit
-python view_map.py dungeon    # look at one map (arrow keys scroll)
+python view_map.py slums1     # look at one map (arrow keys scroll); parked/town for parked maps
 python validate_maps.py       # check all maps for mistakes
 python smoke_test.py          # headless play-through of every door
 python make_screenshots.py    # regenerate screenshots/*.png
@@ -22,7 +27,21 @@ In the demo: walk into an NPC to see its dialogue key, walk into a chest to open
 step on a save point / boss tile for a placeholder message, and grass (`g`) may
 trigger a placeholder "Encounter!" message. Messages are also printed to the terminal.
 
-## The maps
+## Chapter 1 maps (`maps/chapter1/`, dark "slums" palette)
+
+1. **The Slums: Back Alleys** (`slums1`, 40x30) — a maze of narrow alleys with dead ends. Warwick starts in a
+   hovel in the top-left. A beggar, an urchin, a drunk in a small yard and a gate-watcher; a save point in a
+   little courtyard; two chests tucked in dead ends; rubble heaps (`g`) are encounter tiles (sewer_rat,
+   alley_cutpurse); puddles (`~`) block. The gate on the east wall leads to the main road and stays
+   **locked until `slums_gate_open`** (placeholder flag name until the story beats are set).
+2. **The Slums: Main Road** (`slums2`, 50x22) — a 4-tile-wide road running west to east with sidewalks and
+   buildings on both sides, narrow dead-end alleys between them, a back yard with a chest, a save point,
+   four NPCs (fruit seller, street guard, old woman, thug), puddles and rubble (sewer_rat, street_thug).
+   You arrive from the alleys at the west end; the east end is walled off for now (future exit).
+
+Route: slums1 east gate ↔ slums2 west end (you leave going east and arrive walking east).
+
+## Parked prototype maps (`maps/parked/`)
 
 1. **Willowbrook Village** (`town`) — starting town: houses, a pond, 4 NPCs, a save point, and grass outskirts with encounters. Your house is on the left; the cave mouth is at the top.
 2. **Your House** (`house`) — interior with Mom, a bedroom with a save point by the bed, and a chest.

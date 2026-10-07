@@ -7,15 +7,28 @@ from tiles import tile_color
 GRID_LINE = (0, 0, 0, 40)
 
 
-def draw_tile(surface, char, px, py, opened=False):
+def draw_tile(surface, char, px, py, opened=False, theme=None):
     """Draw one tile with its top-left corner at pixel (px, py)."""
     s = TILE_SIZE
     rect = pygame.Rect(px, py, s, s)
-    pygame.draw.rect(surface, tile_color(char), rect)
+    pygame.draw.rect(surface, tile_color(char, theme), rect)
     cx, cy = px + s // 2, py + s // 2
+    slums = theme == "slums"
 
-    if char == "#":
+    if char == "#" and slums:
+        pygame.draw.rect(surface, (28, 26, 31), rect, 2)          # grimy brick
+        pygame.draw.line(surface, (28, 26, 31), (px, cy), (px + s, cy), 1)
+        pygame.draw.line(surface, (28, 26, 31), (cx, py), (cx, cy), 1)
+    elif char == "#":
         pygame.draw.rect(surface, (70, 70, 80), rect, 2)
+    elif char == "." and slums:
+        pygame.draw.rect(surface, (66, 62, 61), rect, 1)          # cobble seams
+    elif char == "g" and slums:                                   # rubble heaps
+        for (ox, oy, r) in ((8, 20, 5), (19, 14, 6), (24, 24, 4)):
+            pygame.draw.circle(surface, (98, 84, 68), (px + ox, py + oy), r)
+        pygame.draw.line(surface, (120, 110, 95), (px + 4, py + 8), (px + 12, py + 6), 2)
+    elif char == "~" and slums:
+        pygame.draw.ellipse(surface, (70, 88, 78), rect.inflate(-8, -14), 2)
     elif char == "g":
         for dx in (6, 16, 25):  # little grass tufts
             pygame.draw.line(surface, (50, 120, 45), (px + dx, py + 22), (px + dx + 3, py + 14), 2)
@@ -58,7 +71,8 @@ def draw_map(surface, game_map, cam_x=0, cam_y=0, opened_chests=()):
         for x in range(first_x, last_x):
             char = game_map.tile_at(x, y)
             opened = (game_map.name, x, y) in opened_chests
-            draw_tile(surface, char, x * TILE_SIZE - cam_x, y * TILE_SIZE - cam_y, opened)
+            draw_tile(surface, char, x * TILE_SIZE - cam_x, y * TILE_SIZE - cam_y, opened,
+                      getattr(game_map, "theme", None))
 
 
 def draw_player(surface, tile_x, tile_y, cam_x, cam_y):

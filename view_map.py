@@ -1,8 +1,9 @@
 """Tiny standalone map viewer: draws one map as coloured squares.
 
 Usage:
-    python view_map.py town                 # open a window (arrow keys scroll)
-    python view_map.py town --save out.png  # save the whole map as a PNG
+    python view_map.py slums1                 # open a window (arrow keys scroll)
+    python view_map.py slums1 --save out.png  # save the whole map as a PNG
+    python view_map.py parked/town            # maps in other folders: <folder>/<name>
 
 Only needs pygame and the maps/ folder - it does not import the game code.
 """
@@ -20,22 +21,40 @@ COLOURS = {
     "T": (35, 100, 40), "~": (50, 110, 200), "S": (255, 230, 70),
     "C": (150, 95, 35), "B": (170, 30, 40),
 }
+# Darker palette for maps whose JSON says "theme": "slums".
+THEME_COLOURS = {
+    "slums": {"#": (40, 37, 44), ".": (78, 74, 72), "D": (70, 48, 30),
+              "g": (72, 60, 48), "~": (52, 66, 58)},
+}
+
+
+def find(name):
+    """'slums1' searches every folder in maps/ (chapter1 first); 'parked/town' is exact."""
+    if os.path.exists(os.path.join(MAPS_DIR, name + ".txt")):
+        return os.path.join(MAPS_DIR, name)
+    for folder in sorted(os.listdir(MAPS_DIR)):
+        path = os.path.join(MAPS_DIR, folder, name)
+        if os.path.exists(path + ".txt"):
+            return path
+    sys.exit(f"map '{name}' not found under {MAPS_DIR}")
 
 
 def load(name):
-    with open(os.path.join(MAPS_DIR, name + ".txt"), encoding="utf-8") as f:
+    base = find(name)
+    with open(base + ".txt", encoding="utf-8") as f:
         rows = [line.rstrip("\r\n") for line in f if line.strip()]
-    with open(os.path.join(MAPS_DIR, name + ".json"), encoding="utf-8") as f:
+    with open(base + ".json", encoding="utf-8") as f:
         meta = json.load(f)
     return rows, meta
 
 
-def draw(rows):
+def draw(rows, theme=None):
+    colours = {**COLOURS, **THEME_COLOURS.get(theme, {})}
     surf = pygame.Surface((len(rows[0]) * TILE, len(rows) * TILE))
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
             rect = (x * TILE, y * TILE, TILE, TILE)
-            pygame.draw.rect(surf, COLOURS.get(ch, (255, 0, 255)), rect)
+            pygame.draw.rect(surf, colours.get(ch, (255, 0, 255)), rect)
             pygame.draw.rect(surf, (0, 0, 0), rect, 1)
     return surf
 
@@ -51,13 +70,13 @@ def main():
 
     if "--save" in sys.argv:
         out = sys.argv[sys.argv.index("--save") + 1]
-        pygame.image.save(draw(rows), out)
+        pygame.image.save(draw(rows, meta.get("theme")), out)
         print("saved", out)
         return
 
     screen = pygame.display.set_mode((800, 600))
     pygame.display.set_caption(f"view_map: {name}")
-    image = draw(rows)
+    image = draw(rows, meta.get("theme"))
     cam_x = cam_y = 0
     clock = pygame.time.Clock()
     while True:

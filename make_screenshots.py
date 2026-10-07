@@ -42,20 +42,27 @@ def main():
     pygame.display.set_mode((1, 1))
     os.makedirs(OUT_DIR, exist_ok=True)
     font, small = pygame.font.Font(None, 30), pygame.font.Font(None, 18)
-    for f in sorted(os.listdir(settings.MAPS_DIR)):
-        if f.endswith(".txt"):
-            m = GameMap(f[:-4])
-            path = os.path.join(OUT_DIR, m.name + ".png")
-            pygame.image.save(overview(m, font, small), path)
-            print("saved", path)
+    # Current chapter's maps go in screenshots/, other folders in screenshots/<folder>/.
+    for folder in sorted(os.listdir(settings.MAPS_ROOT)):
+        maps_dir = os.path.join(settings.MAPS_ROOT, folder)
+        if not os.path.isdir(maps_dir):
+            continue
+        out_dir = OUT_DIR if maps_dir == settings.MAPS_DIR else os.path.join(OUT_DIR, folder)
+        os.makedirs(out_dir, exist_ok=True)
+        for f in sorted(os.listdir(maps_dir)):
+            if f.endswith(".txt"):
+                m = GameMap(f[:-4], maps_dir)
+                path = os.path.join(out_dir, m.name + ".png")
+                pygame.image.save(overview(m, font, small), path)
+                print("saved", path)
 
     # One in-game frame to show the camera + map label.
     from game import Game
     game = Game()
-    game.player.x, game.player.y = 19, 6
-    game.show("Encounter! A wild slime appears!")
+    game.player.x, game.player.y = 20, 6
+    game.show("Encounter! A wild sewer_rat appears!")
     game.draw()
-    path = os.path.join(OUT_DIR, "gameplay_town.png")
+    path = os.path.join(OUT_DIR, "gameplay_slums1.png")
     pygame.image.save(game.screen, path)
     print("saved", path)
     pygame.quit()

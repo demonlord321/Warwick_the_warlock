@@ -19,10 +19,30 @@ TILES = {
 }
 
 
+# Optional per-map colour palettes, picked with "theme" in a map's JSON.
+# Only the base colours change; walkability never does.
+_SLUMS_FLOOR = (78, 74, 72)        # wet cobbles
+THEMES = {
+    "slums": {
+        "#": (40, 37, 44),         # soot-black brick
+        ".": _SLUMS_FLOOR,
+        "P": _SLUMS_FLOOR, "N": _SLUMS_FLOOR, "S": _SLUMS_FLOOR,
+        "C": _SLUMS_FLOOR, "B": _SLUMS_FLOOR,
+        "D": (70, 48, 30),         # rotten timber gate
+        "g": (72, 60, 48),         # rubble and refuse (still the encounter tile)
+        "~": (52, 66, 58),         # stagnant puddles / open sewer
+        "T": (55, 50, 45),
+    },
+}
+
+
 def is_solid(char):
     """Unknown characters are treated as solid so mistakes are easy to spot."""
     return TILES.get(char, ("unknown", (255, 0, 255), True))[2]
 
 
-def tile_color(char):
+def tile_color(char, theme=None):
+    palette = THEMES.get(theme, {})
+    if char in palette:
+        return palette[char]
     return TILES.get(char, ("unknown", (255, 0, 255), True))[1]

@@ -2,6 +2,10 @@
 
 Usage:  python validate_maps.py          (exit code 0 = all good)
 
+Every sub-folder of maps/ (chapter1, parked, ...) is its own set of maps and is
+checked on its own: doors only lead to maps in the same folder, and the start
+map is the one map in that folder holding the single 'P'.
+
 Checks:
   * grid is rectangular and only uses legend characters
   * every 'D' has a JSON door entry and every door entry sits on a 'D'
@@ -23,19 +27,26 @@ import os
 import sys
 from collections import deque
 
-MAPS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "maps")
-START_MAP = "town"
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+MAPS_ROOT = os.path.join(ROOT_DIR, "maps")
 LEGEND = set("#.PNDgT~SCB")
 SOLID = set("#NTC~")
 
 
-DIALOGUE_PATHS = [os.path.join(os.path.dirname(MAPS_DIR), p)
-                  for p in ("dialogue.json", os.path.join("data", "dialogue.json"))]
+def map_folders():
+    """Every sub-folder of maps/ that holds at least one .txt map."""
+    return sorted(d for d in glob.glob(os.path.join(MAPS_ROOT, "*"))
+                  if os.path.isdir(d) and glob.glob(os.path.join(d, "*.txt")))
 
 
-def load_dialogue():
-    """Return (path, data) for dialogue.json if the project has one yet, else (None, None)."""
-    for path in DIALOGUE_PATHS:
+def load_dialogue(maps_dir):
+    """Return (path, data) for the first dialogue.json found, else (None, None).
+
+    Looks next to the maps first (maps/<chapter>/dialogue.json), then data/, then the project root.
+    """
+    for path in (os.path.join(maps_dir, "dialogue.json"),
+                 os.path.join(ROOT_DIR, "data", "dialogue.json"),
+                 os.path.join(ROOT_DIR, "dialogue.json")):
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:
                 return path, json.load(f)
@@ -52,13 +63,13 @@ def flags_set_by(dialogue):
     return out
 
 
-def load_all():
+def load_all(maps_dir):
     maps = {}
-    for txt in sorted(glob.glob(os.path.join(MAPS_DIR, "*.txt"))):
+    for txt in sorted(glob.glob(os.path.join(maps_dir, "*.txt"))):
         name = os.path.splitext(os.path.basename(txt))[0]
         with open(txt, encoding="utf-8") as f:
             rows = [line.rstrip("\r\n") for line in f if line.strip()]
-        json_path = os.path.join(MAPS_DIR, name + ".json")
+        json_path = os.path.join(maps_dir, name + ".json")
         meta = None
         if os.path.exists(json_path):
             with open(json_path, encoding="utf-8") as f:
@@ -102,13 +113,15 @@ def adjacent(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1
 
 
-def validate():
+def validate(maps_dir):
     errors, warnings = [], []
-    maps = load_all()
-    if START_MAP not in maps:
-        return [f"start map '{START_MAP}' not found"], warnings
+    maps = load_all(maps_dir)
+    starts_with_p = [n for n, (rows, _) in maps.items() if tiles_of(rows, "P")]
+    if len(starts_with_p) != 1:
+        return [f"exactly one map needs a 'P' start tile (found: {starts_with_p or 'none'})"], warnings
+    START_MAP = starts_with_p[0]
 
-    dialogue_path, dialogue = load_dialogue()
+    dialogue_path, dialogue = load_dialogue(maps_dir)
     settable = flags_set_by(dialogue)
 
     p_count = 0
@@ -266,15 +279,27 @@ def validate():
 
 
 def main():
-    errors, warnings = validate()
+    total_errors = 0
+    for folder in map_folders():
+        label = os.path.relpath(folder, ROOT_DIR)
+        print(f"== {label} ==")
+        total_errors += report(folder)
+        print()
+    if total_errors:
+        print(f"{total_errors} error(s) found.")
+        sys.exit(1)
+    print("All map folders OK.")
+
+
+def report(maps_dir):
+    errors, warnings = validate(maps_dir)
     for w in warnings:
         print("WARNING:", w)
     for e in errors:
         print("ERROR:", e)
     if errors:
-        print(f"\n{len(errors)} error(s) found.")
-        sys.exit(1)
-    maps = load_all()
+        return len(errors)
+    maps = load_all(maps_dir)
     print(f"All {len(maps)} maps OK: {', '.join(sorted(maps))}")
     print("Door directions (the way you walk through each door):")
     for name, (rows, meta) in sorted(maps.items()):
@@ -285,8 +310,9 @@ def main():
             lock = f"  [locked until '{d['requires_flag']}']" if d.get("requires_flag") else ""
             print(f"  {name} {d['x'], d['y']} go {door_side(rows, d['x'], d['y'])} -> "
                   f"arrive at {d['target_map']} {back['x'], back['y']} (its return door goes {door_side(t_rows, back['x'], back['y'])}){lock}")
-    if load_dialogue()[0] is None:
+    if load_dialogue(maps_dir)[0] is None:
         print("Note: no dialogue.json yet, so locked_key / flag checks against dialogue were skipped.")
+    return 0
 
 
 if __name__ == "__main__":

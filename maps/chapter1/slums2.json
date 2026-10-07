@@ -1,0 +1,15 @@
+{
+  "display_name": "The Slums: Main Road",
+  "theme": "slums",
+  "doors": [
+    {"x": 0, "y": 10, "target_map": "slums1", "spawn_x": 38, "spawn_y": 15}
+  ],
+  "npcs": [
+    {"x": 5, "y": 8, "id": "fruit_seller", "dialogue_key": "fruit_seller_haggle"},
+    {"x": 20, "y": 13, "id": "street_guard", "dialogue_key": "guard_patrol"},
+    {"x": 35, "y": 8, "id": "old_woman", "dialogue_key": "old_woman_warning"},
+    {"x": 44, "y": 13, "id": "thug", "dialogue_key": "thug_threat"}
+  ],
+  "encounters": {"rate": 0.1, "enemy_pool": ["sewer_rat", "street_thug"]},
+  "boss": null
+}

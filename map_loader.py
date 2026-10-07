@@ -27,6 +27,7 @@ class GameMap:
         self.npcs = {(n["x"], n["y"]): n for n in meta.get("npcs", [])}
         self.encounters = meta.get("encounters") or {"rate": 0.0, "enemy_pool": []}
         self.boss = meta.get("boss")
+        self.theme = meta.get("theme")  # optional colour palette, e.g. "slums"
 
         # Find the player start tile, if this map has one.
         self.player_start = None
