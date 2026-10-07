@@ -23,8 +23,11 @@ python smoke_test.py          # headless play-through of every door
 python make_screenshots.py    # regenerate screenshots/*.png
 ```
 
-The game opens on a title screen (New Game, Load Game, Quit). New Game starts in
-the slums with empty flags. Esc while exploring returns to the title; Quit exits.
+The game opens on a title screen (New Game, Load Game, Quit). New Game clears
+the flags, plays the chapter intro (`data/chapter1/intro.json`), then starts in
+the slums. Z finishes the current intro page or advances it; Esc skips the rest
+and drops you in `slums1`. Load Game skips the intro. Esc while exploring
+returns to the title; Quit exits.
 Load Game stays grey until a save exists. Stepping on a save point (`S`) writes
 `save.json` (chapter, map, position, flags) and says "Game saved." in the dialogue
 box. Load Game restores that exactly. `save.json` is gitignored.
@@ -78,7 +81,9 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `states.py` | state stack: title screen, exploring, and the dialogue box |
 | `save_load.py` | writes and reads `save.json` (used by save points and Load Game) |
 | `dialogue.py` | loads `data/<chapter>/dialogue.json` and picks the entry for the current flags |
-| `data/chapter1/dialogue.json` | placeholder lines for the slums NPCs and the locked gate |
+| `intro.py` | loads `data/<chapter>/intro.json` (title card and story pages) |
+| `data/chapter1/dialogue.json` | placeholder before/after lines for the slums NPCs, and the locked gate |
+| `data/chapter1/intro.json` | draft chapter intro: title and pages |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |
 | `validate_maps.py` | standalone checker (plain Python) |
 | `smoke_test.py`, `make_screenshots.py` | headless test + screenshot generator |

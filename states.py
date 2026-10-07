@@ -1,7 +1,7 @@
 """State stack: input, update, and draw go to whichever state is on top.
 
-The title screen is the bottom state. Exploring is pushed on top of it.
-Dialogue (and later battle) get pushed above exploring, so the map stays
+The title screen is the bottom state. New Game pushes the chapter intro,
+then exploring. Dialogue (and later battle) get pushed above exploring, so the map stays
 up underneath and the player can't walk while another state is active.
 Smooth movement is parked; see PLAN.md.
 """
@@ -11,6 +11,7 @@ import pygame
 
 import settings
 from dialogue import flags_to_set, pick_entry
+from intro import load_intro
 from render import draw_map, draw_player
 from save_load import has_save, load_game, save_game
 
@@ -333,6 +334,96 @@ class ExploreState(State):
             pygame.draw.rect(screen, (255, 255, 255), box, 2)
             text = game.font.render(game.message, True, (255, 255, 255))
             screen.blit(text, (box.x + 14, box.y + 15))
+
+
+class IntroState(State):
+    """Chapter title card, then the story pages, then the first map.
+
+    The title is shown whole. Each page types on like the dialogue box:
+    Z finishes the page, and Z again goes to the next one. After the last
+    page the start map loads. Esc skips the rest and drops you on that map.
+    """
+
+    def __init__(self, game):
+        super().__init__(game)
+        title, pages = load_intro(game.chapter)
+        self.cards = [title] + list(pages)
+        self.index = 0
+        self.chars_shown = len(title)   # the title card is already complete
+        self.acc_ms = 0
+        self.title_font = pygame.font.Font(None, settings.INTRO_TITLE_SIZE)
+
+    def on_enter(self):
+        for card in self.cards:
+            print(card)
+
+    def on_escape(self):
+        self.game.finish_intro()
+        return True
+
+    def handle_input(self, events):
+        if not super().handle_input(events):
+            return False
+        if self.game.states.top() is not self:
+            return True
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key in (pygame.K_z, pygame.K_RETURN, pygame.K_KP_ENTER):
+                self.advance()
+                if self.game.states.top() is not self:
+                    return True
+        return True
+
+    def current_text(self):
+        return self.cards[self.index]
+
+    def update(self, dt):
+        text = self.current_text()
+        if self.chars_shown >= len(text):
+            return
+        self.acc_ms += dt
+        while self.acc_ms >= settings.DIALOGUE_CHAR_MS and self.chars_shown < len(text):
+            self.acc_ms -= settings.DIALOGUE_CHAR_MS
+            self.chars_shown += 1
+
+    def advance(self):
+        """Z: finish the current card, or move on if it is already done."""
+        text = self.current_text()
+        if self.chars_shown < len(text):
+            self.chars_shown = len(text)
+            self.acc_ms = 0
+            return
+        self.index += 1
+        self.chars_shown = 0
+        self.acc_ms = 0
+        if self.index >= len(self.cards):
+            self.game.finish_intro()
+
+    def draw(self, screen):
+        if self.game.states.top() is not self:
+            return
+        screen.fill(settings.MENU_BG)
+        band = pygame.Rect(0, 0, 64, settings.SCREEN_HEIGHT)
+        pygame.draw.rect(screen, settings.MENU_BAND, band)
+        pygame.draw.rect(screen, settings.MENU_BAND, band.move(settings.SCREEN_WIDTH - 64, 0))
+
+        shown = self.current_text()[:self.chars_shown]
+        if self.index == 0:
+            img = self.title_font.render(shown, True, settings.MENU_TITLE_COLOR)
+            screen.blit(img, img.get_rect(center=(settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT // 2)))
+        else:
+            font = self.game.font
+            width = settings.SCREEN_WIDTH - 160
+            rows = wrap_text(font, shown, width)
+            line_h = font.get_linesize() + 6
+            y = settings.SCREEN_HEIGHT // 2 - (len(rows) * line_h) // 2
+            for row in rows:
+                img = font.render(row, True, settings.DIALOGUE_TEXT_COLOR)
+                screen.blit(img, img.get_rect(center=(settings.SCREEN_WIDTH // 2, y)))
+                y += line_h
+
+        if self.chars_shown >= len(self.current_text()):
+            prompt = self.game.font.render("Z", True, settings.MENU_TITLE_COLOR)
+            screen.blit(prompt, prompt.get_rect(center=(settings.SCREEN_WIDTH // 2, settings.SCREEN_HEIGHT - 80)))
 
 
 class MenuState(State):

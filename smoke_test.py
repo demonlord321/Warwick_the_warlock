@@ -153,7 +153,32 @@ def check_dialogue_picking():
     ]
     assert pick_entry(entries, {})["lines"] == ["before"]
     assert pick_entry(entries, {"slums_gate_open": True})["lines"] == ["after"]
+
+    # Every slums NPC has a before-gate line and an after-gate line. Placeholder
+    # text is fine; the story pass replaces it later.
+    for map_name in ("slums1", "slums2"):
+        for npc in GameMap(map_name).npcs.values():
+            key = npc["dialogue_key"]
+            npc_entries = data[key]
+            assert any(not entry["requires"] for entry in npc_entries), key
+            assert any("slums_gate_open" in entry["requires"] for entry in npc_entries), key
     print("dialogue picking OK")
+
+
+def check_intro_file():
+    """data/<chapter>/intro.json loads a title and pages."""
+    from intro import intro_path, load_intro
+
+    path = intro_path()
+    assert path.endswith(os.path.join("data", "chapter1", "intro.json")), path
+    title, pages = load_intro()
+    assert title == "Chapter One: The Master"
+    assert pages == [
+        "Below the city's high walls lie the slums, where the rain never quite washes the streets clean.",
+        "Warwick has known nothing else. No family, no coin, no name worth remembering.",
+        "But tonight something stirs in the alleys, and someone has been watching him.",
+    ]
+    print("intro file OK")
 
 
 def check_gate_lock(game, door_xy, flag):
@@ -263,7 +288,9 @@ def check_save_round_trip(game):
         assert menu.enabled(load_i)
         menu.selected = load_i
         assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)])
+        from states import IntroState
         assert game.states.top() is game.explore
+        assert not isinstance(game.states.top(), IntroState)
         assert game.chapter == "chapter1"
         assert game.current.name == "slums1"
         assert (game.player.x, game.player.y) == (14, 9)
@@ -301,24 +328,54 @@ def check_main_menu(game):
 
     menu.selected = 0
     assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
-    assert game.states.top() is game.explore
+    from states import IntroState
+    assert isinstance(game.states.top(), IntroState)
+    assert game.states.top().cards[0] == "Chapter One: The Master"
     assert game.flags == {}
     assert game.chapter == settings.CHAPTER
+    # Esc skips the intro straight to the start tile.
+    assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)])
+    assert game.states.top() is game.explore
     assert game.current.name == settings.START_MAP
     assert (game.player.x, game.player.y) == game.current.player_start
-
-    assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)])
-    assert game.states.top() is menu
-    game.new_game()
-    assert game.states.top() is game.explore
-    assert game.flags == {}
-    assert (game.player.x, game.player.y) == game.current.player_start
     print("main menu OK")
+
+
+def check_intro_pages(game):
+    """Z finishes a typing page, then advances. The last page starts the map."""
+    from states import IntroState
+
+    game.return_to_menu()
+    game.new_game()
+    intro = game.states.top()
+    assert isinstance(intro, IntroState)
+    # Title card is already complete, so Z moves on to the first page.
+    assert intro.index == 0
+    assert intro.chars_shown == len(intro.current_text())
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
+    assert intro.index == 1
+    assert intro.chars_shown == 0
+    intro.update(settings.DIALOGUE_CHAR_MS * 3)
+    assert intro.chars_shown == 3
+    assert intro.index == 1
+    # Z while the page is still typing reveals the rest and stays on it.
+    intro.advance()
+    assert intro.chars_shown == len(intro.current_text())
+    assert intro.index == 1
+    game.draw()
+    while game.states.top() is intro:
+        intro.advance()
+    assert game.states.top() is game.explore
+    assert game.current.name == settings.START_MAP
+    assert (game.player.x, game.player.y) == game.current.player_start
+    assert game.flags == {}
+    print("intro pages OK")
 
 
 def main():
     random.seed(1)
     check_dialogue_picking()
+    check_intro_file()
     # Every map in every folder must load.
     for folder in sorted(os.listdir(settings.MAPS_ROOT)):
         maps_dir = os.path.join(settings.MAPS_ROOT, folder)
@@ -332,6 +389,7 @@ def main():
     names = sorted(f[:-4] for f in os.listdir(settings.MAPS_DIR) if f.endswith(".txt"))
     game = Game()
     check_main_menu(game)
+    check_intro_pages(game)
     print("start:", game.current.name, game.current.player_start)
     assert game.current.name == settings.START_MAP
     assert game.states.top() is game.explore

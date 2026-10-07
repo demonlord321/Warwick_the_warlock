@@ -60,6 +60,7 @@ def main():
     from game import Game
     game = Game()
     game.new_game()
+    game.finish_intro()
     game.player.x, game.player.y = 20, 6
     game.show("Encounter! A wild sewer_rat appears!")
     game.draw()

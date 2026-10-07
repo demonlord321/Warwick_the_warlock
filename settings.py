@@ -34,3 +34,4 @@ MENU_NORMAL = (190, 180, 170)
 MENU_DISABLED = (96, 90, 88)
 MENU_TITLE_SIZE = 64
 MENU_OPTION_SIZE = 36
+INTRO_TITLE_SIZE = 48          # chapter card, a bit smaller than the game title

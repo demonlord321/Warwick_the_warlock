@@ -2,6 +2,7 @@
 
 Run:  python game.py
 Keys: the title screen uses up/down (or W/S) and Z/Enter.
+      The chapter intro uses Z to advance and Esc to skip to the map.
       In the slums, arrows / WASD move, Z advances dialogue, F1 prints flags.
       Esc returns to the title. Quit on the title exits.
 
@@ -18,7 +19,7 @@ from camera import Camera
 from dialogue import load_dialogue
 from map_loader import GameMap
 from player import Player
-from states import ExploreState, MenuState, StateStack
+from states import ExploreState, IntroState, MenuState, StateStack
 
 MESSAGE_TIME_MS = 2000
 
@@ -62,10 +63,9 @@ class Game:
         return self.maps[name]
 
     def new_game(self):
-        """Start fresh: empty flags, chapter 1, standing on the slums1 start tile.
+        """Start fresh: empty flags, chapter 1, the intro, then the start tile.
 
-        The chapter intro screen (PLAN M1.6) will play before this later.
-        Load Game will skip it. For now New Game drops you straight into the map.
+        Load Game does not come through here, so it skips the intro.
         """
         self.flags = {}
         self.chapter = settings.CHAPTER
@@ -78,7 +78,14 @@ class Game:
         self.player.x, self.player.y = self.current.player_start
         self.camera.follow(self.player.x, self.player.y, self.current)
         self.return_to_menu()
-        self.states.push(self.explore)
+        self.states.push(IntroState(self))
+
+    def finish_intro(self):
+        """Leave the intro and stand on the map new_game already prepared."""
+        if isinstance(self.states.top(), IntroState):
+            self.states.pop()
+        if not isinstance(self.states.top(), ExploreState):
+            self.states.push(self.explore)
 
     def return_to_menu(self):
         """Pop back to the title. Does not save, and does not ask."""

@@ -33,15 +33,15 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 **M1.5: Main menu**
 - [x] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
 - [x] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
-- [ ] New Game resets flags, then plays the chapter intro (below), then starts in `slums1`
+- [x] New Game resets flags, then plays the chapter intro (below), then starts in `slums1`
 - [x] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
 - [x] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
 - [x] Quit exits cleanly; Esc in-game returns to the menu
 
 **M1.6: Chapter intro screen**
-- [ ] Chapter intro state: chapter title card ("Chapter One: The Master"), then a few pages of story text (fade in, Z to advance), then load the first map, Developer
-- [ ] Esc skips the intro; Load Game bypasses it
-- [ ] Intro text stored as data in `data/chapter1/intro.json` (`title`, `pages`), so it can be rewritten without touching code
+- [x] Chapter intro state: chapter title card ("Chapter One: The Master"), then a few pages of story text (fade in, Z to advance), then load the first map, Developer
+- [x] Esc skips the intro; Load Game bypasses it
+- [x] Intro text stored as data in `data/chapter1/intro.json` (`title`, `pages`), so it can be rewritten without touching code
 - [ ] Intro text drafted by Planner, approved by Dyllan
 
 **M2: Interaction**
