@@ -42,9 +42,12 @@ def map_folders():
 def load_dialogue(maps_dir):
     """Return (path, data) for the first dialogue.json found, else (None, None).
 
-    Looks next to the maps first (maps/<chapter>/dialogue.json), then data/, then the project root.
+    Looks next to the maps first (maps/<chapter>/dialogue.json), then data/<chapter>/,
+    then data/, then the project root.
     """
+    chapter = os.path.basename(os.path.normpath(maps_dir))
     for path in (os.path.join(maps_dir, "dialogue.json"),
+                 os.path.join(ROOT_DIR, "data", chapter, "dialogue.json"),
                  os.path.join(ROOT_DIR, "data", "dialogue.json"),
                  os.path.join(ROOT_DIR, "dialogue.json")):
         if os.path.exists(path):
