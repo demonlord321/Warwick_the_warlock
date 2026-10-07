@@ -30,6 +30,14 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [x] Code split into modules with `settings.py`
 - [ ] Smooth movement (parked until polish)
 
+**M1.5: Main menu**
+- [ ] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
+- [ ] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
+- [ ] New Game resets flags and starts Chapter 1 in `slums1`
+- [ ] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
+- [ ] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
+- [ ] Quit exits cleanly; Esc in-game returns to the menu
+
 **M2: Interaction**
 - [ ] Dialogue box (typewriter text, Z to advance, blocks movement), Developer
 - [ ] `dialogue.json` + loader (`requires` / `sets` / `lines`), Developer
