@@ -45,7 +45,7 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [ ] Intro text drafted by Planner, approved by Dyllan
 
 **M2: Interaction**
-- [ ] Dialogue box (typewriter text, Z to advance, blocks movement), Developer
+- [x] Dialogue box (typewriter text, Z to advance, blocks movement), Developer
 - [ ] `dialogue.json` + loader (`requires` / `sets` / `lines`), Developer
 - [ ] Flags dict hooked up to NPCs, plus a debug key, Developer
 - [x] Flag-gated doors (`requires_flag`, `locked_key`), Mapmaker

@@ -52,6 +52,66 @@ def walk_through_door(game, door_xy):
     print(f"  {src.name} {door_xy} -> {game.current.name} at {(game.player.x, game.player.y)}  OK")
 
 
+def check_dialogue_box(game):
+    """Z finishes a typing line, then advances; the box blocks movement until it closes."""
+    from states import DialogueState
+
+    start = (game.player.x, game.player.y)
+    closed = []
+    game.states.push(DialogueState(game, ["Hello there.", "Second line."],
+                                   on_close=lambda: closed.append(True)))
+    box = game.states.top()
+    game.draw()
+
+    # Still typing: Z reveals the rest of the line and stays on it.
+    assert box.chars_shown == 0
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
+    assert box.chars_shown == len("Hello there.")
+    assert box.index == 0
+    assert game.states.top() is box
+
+    # Line complete: Z moves to the next line.
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
+    assert box.index == 1
+    assert box.chars_shown == 0
+
+    # The typewriter only reveals characters; it does not advance on its own.
+    box.update(settings.DIALOGUE_CHAR_MS * 3)
+    assert box.chars_shown == 3
+    box.update(10_000)
+    assert box.chars_shown == len("Second line.")
+    assert box.index == 1
+    game.draw()
+
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
+    assert closed == [True]
+    assert game.states.top() is game.explore
+
+    # A held move key is handled by exploring only. With the box on top it does nothing,
+    # and the same key walks once the box is gone. (The dummy video driver never
+    # updates get_pressed from posted events, so the test supplies the key state.)
+    class Held:
+        def __getitem__(self, key):
+            return key == pygame.K_d
+
+    real_pressed = pygame.key.get_pressed
+    pygame.key.get_pressed = lambda: Held()
+    try:
+        ready = pygame.time.get_ticks() - settings.MOVE_DELAY_MS
+        game.explore.last_move = ready
+        game.states.push(DialogueState(game, ["Wait."]))
+        assert game.states.handle_input([])
+        assert (game.player.x, game.player.y) == start
+        game.states.pop()
+        game.explore.last_move = ready
+        assert game.states.handle_input([])
+        assert (game.player.x, game.player.y) == (start[0] + 1, start[1])
+    finally:
+        pygame.key.get_pressed = real_pressed
+    game.player.x, game.player.y = start
+    print("dialogue box OK")
+
+
 def check_gate_lock(game, door_xy, flag):
     """A flag-gated door stays shut (player doesn't move) until its flag is set."""
     assert not game.flags.get(flag)
@@ -85,6 +145,7 @@ def main():
     assert game.states.top() is game.explore
     assert game.chapter == settings.CHAPTER
     assert game.flags == {}
+    check_dialogue_box(game)
 
     # Chapter 1 route: the alley gate is locked until its flag is set.
     check_gate_lock(game, (39, 15), "slums_gate_open")

@@ -65,7 +65,7 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `render.py` | draws tiles and the player |
 | `player.py` | grid position + collision check |
 | `game.py` | window, shared story state (`flags`, `chapter`), and the main loop |
-| `states.py` | state stack; exploring is the state on it now (dialogue and battle later) |
+| `states.py` | state stack; exploring, plus a dialogue box pushed on top of it |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |
 | `validate_maps.py` | standalone checker (plain Python) |
 | `smoke_test.py`, `make_screenshots.py` | headless test + screenshot generator |

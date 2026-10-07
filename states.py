@@ -1,8 +1,8 @@
 """State stack: input, update, and draw go to whichever state is on top.
 
-Exploring is the state that exists today. Dialogue (and later battle) get
-pushed on top of it, so the map stays up underneath and the player can't
-walk while another state is active. Smooth movement is parked; see PLAN.md.
+Exploring is the base state. Dialogue (and later battle) get pushed on top
+of it, so the map stays up underneath and the player can't walk while
+another state is active. Smooth movement is parked; see PLAN.md.
 """
 import random
 
@@ -73,6 +73,107 @@ class StateStack:
         # over the map without having to know how the map is drawn.
         for state in self.states:
             state.draw(screen)
+
+
+def wrap_text(font, text, max_width):
+    """Split text into rows that fit max_width. Always returns at least one row."""
+    if text == "":
+        return [""]
+    rows = []
+    current = ""
+    for word in text.split(" "):
+        trial = word if current == "" else current + " " + word
+        if current == "" or font.size(trial)[0] <= max_width:
+            current = trial
+        else:
+            rows.append(current)
+            current = word
+    if current:
+        rows.append(current)
+    return rows
+
+
+class DialogueState(State):
+    """A bottom panel of typewriter text. Push one to talk.
+
+    Z while the line is still appearing finishes it. Z once it's fully shown
+    advances to the next line, and closes the box after the last one.
+    Exploring keeps drawing the map underneath, but it doesn't get input
+    until this state is popped, so the player can't walk with the box open.
+    """
+
+    def __init__(self, game, lines, on_close=None):
+        super().__init__(game)
+        self.lines = list(lines) if lines else [""]
+        self.index = 0
+        self.chars_shown = 0
+        self.acc_ms = 0
+        self.on_close = on_close
+
+    def handle_input(self, events):
+        if not super().handle_input(events):
+            return False
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_z:
+                self.advance()
+                if self.game.states.top() is not self:
+                    return True
+        return True
+
+    def update(self, dt):
+        line = self.lines[self.index]
+        if self.chars_shown >= len(line):
+            return
+        self.acc_ms += dt
+        while self.acc_ms >= settings.DIALOGUE_CHAR_MS and self.chars_shown < len(line):
+            self.acc_ms -= settings.DIALOGUE_CHAR_MS
+            self.chars_shown += 1
+
+    def advance(self):
+        """What Z does: finish the current line, or move on if it's already done."""
+        line = self.lines[self.index]
+        if self.chars_shown < len(line):
+            self.chars_shown = len(line)
+            self.acc_ms = 0
+            return
+        self.index += 1
+        self.chars_shown = 0
+        self.acc_ms = 0
+        if self.index >= len(self.lines):
+            callback = self.on_close
+            self.game.states.pop()
+            if callback:
+                callback()
+
+    def draw(self, screen):
+        margin = settings.DIALOGUE_BOX_MARGIN
+        box = pygame.Rect(
+            margin,
+            settings.SCREEN_HEIGHT - margin - settings.DIALOGUE_BOX_HEIGHT,
+            settings.SCREEN_WIDTH - 2 * margin,
+            settings.DIALOGUE_BOX_HEIGHT,
+        )
+        pygame.draw.rect(screen, settings.DIALOGUE_BG, box)
+        pygame.draw.rect(screen, settings.DIALOGUE_BORDER_COLOR, box, settings.DIALOGUE_BORDER)
+
+        font = self.game.font
+        pad = settings.DIALOGUE_PAD
+        shown = self.lines[self.index][:self.chars_shown]
+        y = box.y + pad
+        line_h = font.get_linesize()
+        for row in wrap_text(font, shown, box.width - 2 * pad):
+            if y + line_h > box.bottom - pad:
+                break
+            img = font.render(row, True, settings.DIALOGUE_TEXT_COLOR)
+            screen.blit(img, (box.x + pad, y))
+            y += line_h + settings.DIALOGUE_LINE_GAP
+
+        if self.chars_shown >= len(self.lines[self.index]):
+            prompt = font.render("Z", True, settings.DIALOGUE_TEXT_COLOR)
+            screen.blit(
+                prompt,
+                (box.right - pad - prompt.get_width(), box.bottom - pad - prompt.get_height() + 6),
+            )
 
 
 class ExploreState(State):
