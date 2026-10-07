@@ -6,7 +6,9 @@ Checks:
   * grid is rectangular and only uses legend characters
   * every 'D' has a JSON door entry and every door entry sits on a 'D'
   * door targets exist; spawns are in bounds, walkable and not a door
-  * every door has a reverse door, and the spawn is right next to it
+  * every door has a reverse door, and the spawn is right next to it (inward side)
+  * doors line up spatially: a door on the north side of one map leads to a
+    door on the south side of the next (east <-> west, etc.)
   * NPC / boss coordinates match 'N' / 'B' tiles (and vice versa)
   * exactly one 'P', and it is in the start map
   * every door, save point, boss, chest and NPC can actually be reached
@@ -45,6 +47,29 @@ def tiles_of(rows, char):
 
 def walkable(rows, x, y):
     return 0 <= y < len(rows) and 0 <= x < len(rows[0]) and rows[y][x] not in SOLID
+
+
+# Direction you walk to go THROUGH a door on that side, as (dx, dy).
+SIDES = {"north": (0, -1), "south": (0, 1), "west": (-1, 0), "east": (1, 0)}
+OPPOSITE = {"north": "south", "south": "north", "west": "east", "east": "west"}
+
+
+def door_side(rows, x, y):
+    """Which wall a door is on, judged by its single open (walkable) neighbour.
+
+    A door with floor below it is on the north wall (you walk north to leave),
+    floor to its left means the east wall, and so on. Returns None if the door
+    does not have exactly one open neighbour (i.e. it isn't set into a wall).
+    """
+    open_sides = [side for side, (dx, dy) in SIDES.items()
+                  if walkable(rows, x - dx, y - dy) and rows[y - dy][x - dx] != "D"]
+    return open_sides[0] if len(open_sides) == 1 else None
+
+
+def inward_tile(rows, x, y):
+    """The walkable tile just inside a door (where players should arrive)."""
+    dx, dy = SIDES[door_side(rows, x, y)]
+    return (x - dx, y - dy)
 
 
 def adjacent(a, b):
@@ -99,12 +124,26 @@ def validate():
                 continue
             if trows[spawn[1]][spawn[0]] == "D":
                 err(f"door {(d['x'], d['y'])} spawn {spawn} in '{tgt}' is ON a door (player would bounce)")
+            side = door_side(rows, d["x"], d["y"])
+            if side is None:
+                err(f"door {(d['x'], d['y'])} must sit in a wall with exactly one open side")
+                continue
             back = [b for b in tmeta.get("doors", []) if b["target_map"] == name
-                    and adjacent((b["x"], b["y"]), spawn)]
+                    and trows[b["y"]][b["x"]] == "D" and door_side(trows, b["x"], b["y"])
+                    and inward_tile(trows, b["x"], b["y"]) == spawn]
             if not back:
-                err(f"door {(d['x'], d['y'])} -> '{tgt}': no return door next to spawn {spawn}")
-            elif not any(adjacent((b["spawn_x"], b["spawn_y"]), (d["x"], d["y"])) for b in back):
-                err(f"door {(d['x'], d['y'])} -> '{tgt}': return door does not spawn next to this door")
+                err(f"door {(d['x'], d['y'])} -> '{tgt}': spawn {spawn} is not the tile just "
+                    f"inside a door that leads back to '{name}'")
+                continue
+            b = back[0]
+            if (b["spawn_x"], b["spawn_y"]) != inward_tile(rows, d["x"], d["y"]):
+                err(f"door {(d['x'], d['y'])} -> '{tgt}': return door {(b['x'], b['y'])} should "
+                    f"spawn at {inward_tile(rows, d['x'], d['y'])} (just inside this door)")
+            b_side = door_side(trows, b["x"], b["y"])
+            if b_side != OPPOSITE[side]:
+                err(f"door {(d['x'], d['y'])} is on the {side} side, so its return door in "
+                    f"'{tgt}' {(b['x'], b['y'])} must be on the {OPPOSITE[side]} side "
+                    f"(it is on the {b_side} side)")
 
         # NPCs and boss
         n_tiles = tiles_of(rows, "N")
@@ -188,8 +227,16 @@ def main():
     if errors:
         print(f"\n{len(errors)} error(s) found.")
         sys.exit(1)
-    names = sorted(load_all())
-    print(f"All {len(names)} maps OK: {', '.join(names)}")
+    maps = load_all()
+    print(f"All {len(maps)} maps OK: {', '.join(sorted(maps))}")
+    print("Door directions (the way you walk through each door):")
+    for name, (rows, meta) in sorted(maps.items()):
+        for d in meta["doors"]:
+            t_rows = maps[d["target_map"]][0]
+            back = [b for b in maps[d["target_map"]][1]["doors"]
+                    if inward_tile(t_rows, b["x"], b["y"]) == (d["spawn_x"], d["spawn_y"])][0]
+            print(f"  {name} {d['x'], d['y']} go {door_side(rows, d['x'], d['y'])} -> "
+                  f"arrive at {d['target_map']} {back['x'], back['y']} (its return door goes {door_side(t_rows, back['x'], back['y'])})")
 
 
 if __name__ == "__main__":

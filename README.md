@@ -27,9 +27,12 @@ trigger a placeholder "Encounter!" message. Messages are also printed to the ter
 1. **Willowbrook Village** (`town`) — starting town: houses, a pond, 4 NPCs, a save point, and grass outskirts with encounters. Your house is on the left; the cave mouth is at the top.
 2. **Your House** (`house`) — interior with Mom, a bedroom with a save point by the bed, and a chest.
 3. **Mossy Caverns** (`dungeon`) — 3 rooms: entrance hall → flooded cavern (cross the river at the single bridge in the top) → switchback vault (zig-zag around two walls) with a chest, a save point and the door to the boss.
-4. **Warden's Chamber** (`boss_room`) — pillared hall between two water channels; the boss waits in the throne alcove.
+4. **Warden's Chamber** (`boss_room`) — long east–west hall: you enter from the west door, walk between two water channels and rows of pillars, and the boss waits in the throne alcove in the east wall.
 
-Route: town ↔ house, town ↔ dungeon ↔ boss_room. Every door works both ways.
+Route: town ↔ house, town ↔ dungeon ↔ boss_room. Every door works both ways, and doors line up
+spatially: leave town northwards through the cave mouth → arrive at the dungeon's south entrance;
+leave the dungeon through its east door → arrive at the boss room's west door; the house's front
+door (north from the street) opens onto the house's south wall. `validate_maps.py` enforces this.
 
 ## Files
 
@@ -67,8 +70,10 @@ Solid (can't walk onto): `# N T ~ C`. Full details in `maps/README.md`.
      "boss": null
    }
    ```
-   The spawn is where you appear in the *other* map — next to its door, not on it.
+   The spawn is where you appear in the *other* map — the tile just inside its door, not on it.
 3. Add the return trip: put a `D` in the other map (replace a wall/floor tile) and add a matching
-   door entry there with `target_map: "cellar"` and a spawn next to the cellar's `D`.
+   door entry there with `target_map: "cellar"` and a spawn just inside the cellar's `D`.
+   Directions must match: if you walk north into the house's door, the cellar's exit must be on
+   its south wall (so you walk south to go back).
 4. Run `python validate_maps.py` — it tells you exactly what's missing or mismatched.
 5. Run `python view_map.py cellar` to look at it, then `python game.py` to walk there.

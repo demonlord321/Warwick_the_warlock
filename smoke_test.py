@@ -62,7 +62,7 @@ def main():
     game = Game()
     print("start:", game.current.name, game.current.player_start)
     route = [("town", (9, 11)), ("house", (10, 14)), ("town", (19, 1)),
-             ("dungeon", (38, 21)), ("boss_room", (12, 19)), ("dungeon", (7, 29))]
+             ("dungeon", (38, 21)), ("boss_room", (0, 8)), ("dungeon", (7, 29))]
     for map_name, door_xy in route:
         assert game.current.name == map_name, game.current.name
         walk_through_door(game, door_xy)
@@ -86,8 +86,8 @@ def main():
     game.step(0, -1)
     assert ("dungeon", 36, 16) in game.opened_chests
     game.current = game.get_map("boss_room")
-    game.player.x, game.player.y = 12, 4
-    game.step(0, -1)
+    game.player.x, game.player.y = 25, 8
+    game.step(1, 0)
     assert "BOSS" in game.message
     pygame.quit()
     print("SMOKE TEST PASSED")

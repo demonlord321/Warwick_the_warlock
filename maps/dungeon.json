@@ -2,7 +2,7 @@
   "display_name": "Mossy Caverns",
   "doors": [
     {"x": 7,  "y": 29, "target_map": "town",      "spawn_x": 19, "spawn_y": 2},
-    {"x": 38, "y": 21, "target_map": "boss_room", "spawn_x": 12, "spawn_y": 18}
+    {"x": 38, "y": 21, "target_map": "boss_room", "spawn_x": 1,  "spawn_y": 8}
   ],
   "npcs": [],
   "encounters": {"rate": 0.12, "enemy_pool": ["bat", "cave_slime", "skeleton"]},

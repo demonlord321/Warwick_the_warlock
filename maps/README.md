@@ -39,7 +39,11 @@ No other characters are used.
 
 * `display_name` is **optional** (extra, not in the original spec): the name shown on screen. Defaults to the file name.
 * `doors`: every `D` in the grid has exactly one entry and vice versa. `spawn_x/spawn_y` is where you
-  appear in `target_map` — a walkable tile right **next to** that map's return door (never on it).
+  appear in `target_map` — the walkable tile just **inside** that map's return door (never on it).
+* Doors must line up spatially. A door's direction is the way you walk through it (a `D` with floor
+  below it is walked through going north). If you leave one map going north, you arrive in the next
+  map at a door you'd walk through going south to come back (north ↔ south, east ↔ west).
+  Each `D` sits in a wall with exactly one open neighbour.
 * `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
 * `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
 
@@ -47,7 +51,7 @@ No other characters are used.
 
 | File | Name | Size | Connections |
 |------|------|------|-------------|
-| `town` | Willowbrook Village | 40x30 | house door (9,11) ↔ house; cave mouth (19,1) ↔ dungeon |
-| `house` | Your House | 20x15 | front door (10,14) ↔ town |
-| `dungeon` | Mossy Caverns (3 rooms) | 40x30 | exit (7,29) ↔ town; sealed door (38,21) ↔ boss_room |
-| `boss_room` | Warden's Chamber | 25x20 | door (12,19) ↔ dungeon |
+| `town` | Willowbrook Village | 40x30 | house door (9,11), go north ↔ house; cave mouth (19,1), go north ↔ dungeon |
+| `house` | Your House | 20x15 | front door (10,14) on south wall, go south ↔ town |
+| `dungeon` | Mossy Caverns (3 rooms) | 40x30 | exit (7,29) on south wall ↔ town; sealed door (38,21) on east wall ↔ boss_room |
+| `boss_room` | Warden's Chamber | 30x17 | door (0,8) on west wall ↔ dungeon; throne/boss on the east side |

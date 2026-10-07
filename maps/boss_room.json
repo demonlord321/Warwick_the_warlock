@@ -1,9 +1,9 @@
 {
   "display_name": "Warden's Chamber",
   "doors": [
-    {"x": 12, "y": 19, "target_map": "dungeon", "spawn_x": 37, "spawn_y": 21}
+    {"x": 0, "y": 8, "target_map": "dungeon", "spawn_x": 37, "spawn_y": 21}
   ],
   "npcs": [],
   "encounters": {"rate": 0.0, "enemy_pool": []},
-  "boss": {"x": 12, "y": 3, "enemy_id": "cave_warden"}
+  "boss": {"x": 26, "y": 8, "enemy_id": "cave_warden"}
 }
