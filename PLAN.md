@@ -31,12 +31,12 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [ ] Smooth movement (parked until polish)
 
 **M1.5: Main menu**
-- [ ] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
-- [ ] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
+- [x] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
+- [x] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
 - [ ] New Game resets flags, then plays the chapter intro (below), then starts in `slums1`
 - [ ] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
 - [ ] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
-- [ ] Quit exits cleanly; Esc in-game returns to the menu
+- [x] Quit exits cleanly; Esc in-game returns to the menu
 
 **M1.6: Chapter intro screen**
 - [ ] Chapter intro state: chapter title card ("Chapter One: The Master"), then a few pages of story text (fade in, Z to advance), then load the first map, Developer

@@ -225,6 +225,48 @@ def check_flag_key(game):
     print("F1 prints flags OK")
 
 
+def check_main_menu(game):
+    """Boots on the title. New Game starts fresh in slums1. Esc returns to the title."""
+    from states import MenuState
+
+    menu = game.states.top()
+    assert menu is game.menu and isinstance(menu, MenuState)
+    game.draw()
+    assert menu.OPTIONS[menu.selected] == "New Game"
+
+    load_i = menu.OPTIONS.index("Load Game")
+    has_save = os.path.exists(os.path.join(settings.ROOT, "save.json"))
+    assert menu.enabled(load_i) == has_save
+    # Down skips Load Game while it is greyed out.
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_DOWN)])
+    if has_save:
+        assert menu.selected == load_i
+    else:
+        assert menu.OPTIONS[menu.selected] == "Quit"
+    game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP)])
+    assert menu.OPTIONS[menu.selected] == "New Game"
+
+    menu.selected = menu.OPTIONS.index("Quit")
+    assert menu.confirm() is False
+    assert game.states.top() is menu
+
+    menu.selected = 0
+    assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_z)])
+    assert game.states.top() is game.explore
+    assert game.flags == {}
+    assert game.chapter == settings.CHAPTER
+    assert game.current.name == settings.START_MAP
+    assert (game.player.x, game.player.y) == game.current.player_start
+
+    assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE)])
+    assert game.states.top() is menu
+    game.new_game()
+    assert game.states.top() is game.explore
+    assert game.flags == {}
+    assert (game.player.x, game.player.y) == game.current.player_start
+    print("main menu OK")
+
+
 def main():
     random.seed(1)
     check_dialogue_picking()
@@ -240,6 +282,7 @@ def main():
 
     names = sorted(f[:-4] for f in os.listdir(settings.MAPS_DIR) if f.endswith(".txt"))
     game = Game()
+    check_main_menu(game)
     print("start:", game.current.name, game.current.player_start)
     assert game.current.name == settings.START_MAP
     assert game.states.top() is game.explore

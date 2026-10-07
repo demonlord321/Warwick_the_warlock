@@ -16,12 +16,16 @@ Settings: 32px tiles, 800x600 window (see `settings.py`).
 
 ```bash
 pip install pygame            # add --break-system-packages on some Linux systems
-python game.py                # play: arrows/WASD to move, Z advances dialogue, F1 prints flags, Esc to quit
+python game.py                # title: up/down, Z/Enter. In game: move, Z talks, F1 flags, Esc back to title
 python view_map.py slums1     # look at one map (arrow keys scroll); parked/town for parked maps
 python validate_maps.py       # check all maps for mistakes
 python smoke_test.py          # headless play-through of every door
 python make_screenshots.py    # regenerate screenshots/*.png
 ```
+
+The game opens on a title screen (New Game, Load Game, Quit). New Game starts in
+the slums with empty flags. Esc while exploring returns to the title; Quit exits.
+Load Game stays grey until a save exists.
 
 In the demo: walk into an NPC to talk. Z finishes the current line or advances to
 the next, and the box closes after the last one. That NPC's `sets` flags turn on
@@ -69,7 +73,7 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `render.py` | draws tiles and the player |
 | `player.py` | grid position + collision check |
 | `game.py` | window, shared story state (`flags`, `chapter`), and the main loop |
-| `states.py` | state stack; exploring, plus a dialogue box pushed on top of it |
+| `states.py` | state stack: title screen, exploring, and the dialogue box |
 | `dialogue.py` | loads `data/<chapter>/dialogue.json` and picks the entry for the current flags |
 | `data/chapter1/dialogue.json` | placeholder lines for the slums NPCs and the locked gate |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |

@@ -1,9 +1,11 @@
 """State stack: input, update, and draw go to whichever state is on top.
 
-Exploring is the base state. Dialogue (and later battle) get pushed on top
-of it, so the map stays up underneath and the player can't walk while
-another state is active. Smooth movement is parked; see PLAN.md.
+The title screen is the bottom state. Exploring is pushed on top of it.
+Dialogue (and later battle) get pushed above exploring, so the map stays
+up underneath and the player can't walk while another state is active.
+Smooth movement is parked; see PLAN.md.
 """
+import os
 import random
 
 import pygame
@@ -25,15 +27,19 @@ class State:
     def on_exit(self):
         pass
 
+    def on_escape(self):
+        """Esc. Return False to quit the program. Exploring overrides this."""
+        return False
+
     def handle_input(self, events):
         """Handle this frame's events. Return False to quit the game."""
         for event in events:
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                return False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
                 print(f"flags: {self.game.flags}  chapter: {self.game.chapter}")
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return self.on_escape()
         return True
 
     def update(self, dt):
@@ -54,7 +60,7 @@ class StateStack:
         state.on_enter()
 
     def pop(self):
-        # Exploring sits at the bottom for the whole session. Popping it would
+        # The menu sits at the bottom for the whole session. Popping it would
         # leave the game with nothing to draw or take input.
         if len(self.states) <= 1:
             raise RuntimeError("can't pop the last state")
@@ -117,9 +123,16 @@ class DialogueState(State):
         for line in self.lines:
             print(line)
 
+    def on_escape(self):
+        self.game.return_to_menu()
+        return True
+
     def handle_input(self, events):
         if not super().handle_input(events):
             return False
+        # Esc may have closed this box and gone back to the menu.
+        if self.game.states.top() is not self:
+            return True
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_z:
                 self.advance()
@@ -190,9 +203,16 @@ class ExploreState(State):
         super().__init__(game)
         self.last_move = 0
 
+    def on_escape(self):
+        self.game.return_to_menu()
+        return True
+
     def handle_input(self, events):
         if not super().handle_input(events):
             return False
+        # Esc goes back to the title. Don't also take a step that frame.
+        if self.game.states.top() is not self:
+            return True
 
         now = pygame.time.get_ticks()
         if now - self.last_move < settings.MOVE_DELAY_MS:
@@ -308,3 +328,91 @@ class ExploreState(State):
             pygame.draw.rect(screen, (255, 255, 255), box, 2)
             text = game.font.render(game.message, True, (255, 255, 255))
             screen.blit(text, (box.x + 14, box.y + 15))
+
+
+class MenuState(State):
+    """Title screen: New Game, Load Game, Quit.
+
+    Up/down (or W/S) moves the cursor. Z or Enter confirms.
+    Load Game is drawn grey and skipped while save.json is missing.
+    Esc here quits, same as choosing Quit.
+    """
+
+    OPTIONS = ("New Game", "Load Game", "Quit")
+
+    def __init__(self, game):
+        super().__init__(game)
+        self.selected = 0
+        self.title_font = pygame.font.Font(None, settings.MENU_TITLE_SIZE)
+        self.option_font = pygame.font.Font(None, settings.MENU_OPTION_SIZE)
+
+    def enabled(self, index):
+        if self.OPTIONS[index] == "Load Game":
+            return os.path.exists(os.path.join(settings.ROOT, "save.json"))
+        return True
+
+    def move(self, direction):
+        """Step the cursor, skipping options that can't be chosen."""
+        count = len(self.OPTIONS)
+        i = self.selected
+        for _ in range(count):
+            i = (i + direction) % count
+            if self.enabled(i):
+                self.selected = i
+                return
+
+    def confirm(self):
+        """Carry out the highlighted option. Return False to quit the program."""
+        if not self.enabled(self.selected):
+            return True
+        choice = self.OPTIONS[self.selected]
+        if choice == "New Game":
+            self.game.new_game()
+        elif choice == "Load Game":
+            # save.json reading lands with the save-point commit.
+            pass
+        elif choice == "Quit":
+            return False
+        return True
+
+    def handle_input(self, events):
+        if not super().handle_input(events):
+            return False
+        for event in events:
+            if event.type != pygame.KEYDOWN:
+                continue
+            if event.key in (pygame.K_UP, pygame.K_w):
+                self.move(-1)
+            elif event.key in (pygame.K_DOWN, pygame.K_s):
+                self.move(1)
+            elif event.key in (pygame.K_z, pygame.K_RETURN, pygame.K_KP_ENTER):
+                return self.confirm()
+        return True
+
+    def draw(self, screen):
+        # Full-screen state. Don't paint the title over the map once we've left it.
+        if self.game.states.top() is not self:
+            return
+        screen.fill(settings.MENU_BG)
+        band = pygame.Rect(0, 0, 64, settings.SCREEN_HEIGHT)
+        pygame.draw.rect(screen, settings.MENU_BAND, band)
+        pygame.draw.rect(screen, settings.MENU_BAND,
+                         band.move(settings.SCREEN_WIDTH - 64, 0))
+
+        title = self.title_font.render("Warwick the Warlock", True, settings.MENU_TITLE_COLOR)
+        screen.blit(title, title.get_rect(center=(settings.SCREEN_WIDTH // 2, 180)))
+
+        y = 340
+        for i, label in enumerate(self.OPTIONS):
+            if i == self.selected:
+                color = settings.MENU_SELECTED
+                text = "> " + label
+            elif not self.enabled(i):
+                color = settings.MENU_DISABLED
+                text = "  " + label
+            else:
+                color = settings.MENU_NORMAL
+                text = "  " + label
+            img = self.option_font.render(text, True, color)
+            screen.blit(img, img.get_rect(center=(settings.SCREEN_WIDTH // 2, y)))
+            y += 52

@@ -1,11 +1,13 @@
 """Warwick the Warlock — overworld demo.
 
 Run:  python game.py
-Keys: arrows / WASD to move, Z to advance dialogue, F1 to print flags, Esc to quit.
+Keys: the title screen uses up/down (or W/S) and Z/Enter.
+      In the slums, arrows / WASD move, Z advances dialogue, F1 prints flags.
+      Esc returns to the title. Quit on the title exits.
 
 Game owns the window and the shared story state (flags and chapter — the
 bits a save file will hold later). Input, update, and draw go through the
-state stack; exploring is the state on it right now (see states.py).
+state stack. The game boots on the title screen (see states.py).
 """
 import os
 
@@ -16,7 +18,7 @@ from camera import Camera
 from dialogue import load_dialogue
 from map_loader import GameMap
 from player import Player
-from states import ExploreState, StateStack
+from states import ExploreState, MenuState, StateStack
 
 MESSAGE_TIME_MS = 2000
 
@@ -31,7 +33,7 @@ class Game:
 
         # Shared by every state. Save/load will write these out later.
         # flags: story switches, e.g. {"slums_gate_open": True}. Missing = false.
-        # chapter: which maps/<folder> we are playing.
+        # chapter: which maps/<folder> and data/<folder> we are playing.
         self.flags = {}
         self.chapter = settings.CHAPTER
         self.dialogue = load_dialogue(self.chapter)
@@ -42,14 +44,13 @@ class Game:
         self.message = ""
         self.message_until = 0
 
+        self.player = Player(0, 0)
         self.current = self.get_map(settings.START_MAP)
-        start_x, start_y = self.current.player_start
-        self.player = Player(start_x, start_y)
-        self.camera.follow(self.player.x, self.player.y, self.current)
 
         self.states = StateStack()
         self.explore = ExploreState(self)
-        self.states.push(self.explore)
+        self.menu = MenuState(self)
+        self.states.push(self.menu)
 
     # ---------- helpers ----------
     def maps_dir(self):
@@ -59,6 +60,30 @@ class Game:
         if name not in self.maps:
             self.maps[name] = GameMap(name, self.maps_dir())
         return self.maps[name]
+
+    def new_game(self):
+        """Start fresh: empty flags, chapter 1, standing on the slums1 start tile.
+
+        The chapter intro screen (PLAN M1.6) will play before this later.
+        Load Game will skip it. For now New Game drops you straight into the map.
+        """
+        self.flags = {}
+        self.chapter = settings.CHAPTER
+        self.dialogue = load_dialogue(self.chapter)
+        self.maps = {}
+        self.opened_chests = set()
+        self.message = ""
+        self.message_until = 0
+        self.current = self.get_map(settings.START_MAP)
+        self.player.x, self.player.y = self.current.player_start
+        self.camera.follow(self.player.x, self.player.y, self.current)
+        self.return_to_menu()
+        self.states.push(self.explore)
+
+    def return_to_menu(self):
+        """Pop back to the title. Does not save, and does not ask."""
+        while not isinstance(self.states.top(), MenuState):
+            self.states.pop()
 
     def show(self, text):
         """A short banner (chests, encounters, "entered ..."). Also prints it."""
