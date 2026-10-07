@@ -33,10 +33,15 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 **M1.5: Main menu**
 - [ ] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
 - [ ] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
-- [ ] New Game resets flags and starts Chapter 1 in `slums1`
+- [ ] New Game resets flags, then plays the chapter intro (below), then starts in `slums1`
 - [ ] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
 - [ ] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
 - [ ] Quit exits cleanly; Esc in-game returns to the menu
+
+**M1.6: Chapter intro screen**
+- [ ] Chapter intro state: chapter title card ("Chapter One: The Master"), then a few pages of story text (fade in, Z to advance), then load the first map, Developer
+- [ ] Intro text stored as data in `data/chapter1/intro.json` (`title`, `pages`), so it can be rewritten without touching code
+- [ ] Intro text drafted by Planner, approved by Dyllan
 
 **M2: Interaction**
 - [ ] Dialogue box (typewriter text, Z to advance, blocks movement), Developer
@@ -44,7 +49,9 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [ ] Flags dict hooked up to NPCs, plus a debug key, Developer
 - [x] Flag-gated doors (`requires_flag`, `locked_key`), Mapmaker
 - [x] Chapter 1 maps: `slums1` (alleyways) and `slums2` (main road), Mapmaker. Gate on the east wall of slums1 uses placeholder flag `slums_gate_open` (message `slums_gate_locked`); rename once beats are set
-- [ ] Chapter 1 dialogue chain for the slums NPCs, Planner drafts, Dyllan approves
+- [x] Base NPCs placed in the slums, Mapmaker (slums1: beggar, urchin, drunk, gate_watcher; slums2: fruit_seller, street_guard, old_woman, thug)
+- [ ] Base dialogue for those 8 NPCs (before/after gate states), Planner drafts, Dyllan approves
+- [ ] The Master's dialogue chain, waiting on story beats from Dyllan
 - [ ] Smoke tests for flags and locks
 
 **M3: Turn-based combat**
