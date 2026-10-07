@@ -225,24 +225,73 @@ def check_flag_key(game):
     print("F1 prints flags OK")
 
 
+def check_save_round_trip(game):
+    """Step on an S tile, then Load Game restores chapter, map, position, and flags."""
+    import json
+
+    from save_load import SAVE_PATH, has_save
+
+    if os.path.exists(SAVE_PATH):
+        os.remove(SAVE_PATH)
+    try:
+        game.current = game.get_map("slums1")
+        game.player.x, game.player.y = 13, 9
+        game.flags["slums_gate_open"] = True
+        game.flags["demo_flag"] = True
+        game.explore.step(1, 0)
+        assert (game.current.name, game.player.x, game.player.y) == ("slums1", 14, 9)
+        box = game.states.top()
+        assert any("saved" in line.lower() for line in box.lines), box.lines
+        finish_dialogue(game)
+        assert has_save()
+        with open(SAVE_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        assert data == {
+            "chapter": "chapter1",
+            "map": "slums1",
+            "x": 14,
+            "y": 9,
+            "flags": {"slums_gate_open": True, "demo_flag": True},
+        }
+
+        game.flags = {}
+        game.player.x, game.player.y = 2, 2
+        game.current = game.get_map("slums2")
+        game.return_to_menu()
+        menu = game.menu
+        load_i = menu.OPTIONS.index("Load Game")
+        assert menu.enabled(load_i)
+        menu.selected = load_i
+        assert game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN)])
+        assert game.states.top() is game.explore
+        assert game.chapter == "chapter1"
+        assert game.current.name == "slums1"
+        assert (game.player.x, game.player.y) == (14, 9)
+        assert game.flags == {"slums_gate_open": True, "demo_flag": True}
+        print("save/load round trip OK")
+    finally:
+        if os.path.exists(SAVE_PATH):
+            os.remove(SAVE_PATH)
+
+
 def check_main_menu(game):
     """Boots on the title. New Game starts fresh in slums1. Esc returns to the title."""
     from states import MenuState
 
     menu = game.states.top()
     assert menu is game.menu and isinstance(menu, MenuState)
+    # Always exercise the greyed-out Load Game path, even if a previous run left a file.
+    from save_load import SAVE_PATH
+    if os.path.exists(SAVE_PATH):
+        os.remove(SAVE_PATH)
     game.draw()
     assert menu.OPTIONS[menu.selected] == "New Game"
 
     load_i = menu.OPTIONS.index("Load Game")
-    has_save = os.path.exists(os.path.join(settings.ROOT, "save.json"))
-    assert menu.enabled(load_i) == has_save
+    assert menu.enabled(load_i) is False
     # Down skips Load Game while it is greyed out.
     game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_DOWN)])
-    if has_save:
-        assert menu.selected == load_i
-    else:
-        assert menu.OPTIONS[menu.selected] == "Quit"
+    assert menu.OPTIONS[menu.selected] == "Quit"
     game.states.handle_input([pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP)])
     assert menu.OPTIONS[menu.selected] == "New Game"
 
@@ -327,6 +376,7 @@ def main():
     assert isinstance(beggar, DialogueState)
     assert any("beggar" in line.lower() for line in beggar.lines), beggar.lines
     finish_dialogue(game)
+    check_save_round_trip(game)
     pygame.quit()
     print("SMOKE TEST PASSED")
 

@@ -34,8 +34,8 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 - [x] Title screen state: game title "Warwick the Warlock" over a dark slums-themed background, Developer
 - [x] Menu with New Game, Load Game, Quit; arrow keys/WASD to move, Z/Enter to pick, Developer
 - [ ] New Game resets flags, then plays the chapter intro (below), then starts in `slums1`
-- [ ] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
-- [ ] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
+- [x] Load Game greyed out until a save exists; loads `save.json` (chapter, map, position, flags)
+- [x] Minimal save to `save.json` from save points (`S` tiles), pulled forward from M5
 - [x] Quit exits cleanly; Esc in-game returns to the menu
 
 **M1.6: Chapter intro screen**

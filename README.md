@@ -25,14 +25,16 @@ python make_screenshots.py    # regenerate screenshots/*.png
 
 The game opens on a title screen (New Game, Load Game, Quit). New Game starts in
 the slums with empty flags. Esc while exploring returns to the title; Quit exits.
-Load Game stays grey until a save exists.
+Load Game stays grey until a save exists. Stepping on a save point (`S`) writes
+`save.json` (chapter, map, position, flags) and says "Game saved." in the dialogue
+box. Load Game restores that exactly. `save.json` is gitignored.
 
 In the demo: walk into an NPC to talk. Z finishes the current line or advances to
 the next, and the box closes after the last one. That NPC's `sets` flags turn on
 when the box closes (the gate watcher sets `slums_gate_open`, which unlocks the
 east gate). Bump the locked gate to read `slums_gate_locked` in the same box.
 F1 prints the flags dict. Walk into a chest to open it,
-step on a save point / boss tile for a placeholder message, and grass (`g`) may
+step on a save point to save, step on a boss tile for a placeholder message, and grass (`g`) may
 trigger a placeholder "Encounter!" message. Messages are also printed to the terminal.
 
 ## Chapter 1 maps (`maps/chapter1/`, dark "slums" palette)
@@ -74,6 +76,7 @@ door (north from the street) opens onto the house's south wall. `validate_maps.p
 | `player.py` | grid position + collision check |
 | `game.py` | window, shared story state (`flags`, `chapter`), and the main loop |
 | `states.py` | state stack: title screen, exploring, and the dialogue box |
+| `save_load.py` | writes and reads `save.json` (used by save points and Load Game) |
 | `dialogue.py` | loads `data/<chapter>/dialogue.json` and picks the entry for the current flags |
 | `data/chapter1/dialogue.json` | placeholder lines for the slums NPCs and the locked gate |
 | `view_map.py` | standalone viewer (only needs pygame + maps/) |

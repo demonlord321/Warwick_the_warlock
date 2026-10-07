@@ -5,7 +5,6 @@ Dialogue (and later battle) get pushed above exploring, so the map stays
 up underneath and the player can't walk while another state is active.
 Smooth movement is parked; see PLAN.md.
 """
-import os
 import random
 
 import pygame
@@ -13,6 +12,7 @@ import pygame
 import settings
 from dialogue import flags_to_set, pick_entry
 from render import draw_map, draw_player
+from save_load import has_save, load_game, save_game
 
 
 class State:
@@ -274,7 +274,8 @@ class ExploreState(State):
         if tile == "D":
             self.change_map(game.current.doors[here])
         elif tile == "S":
-            game.show("Game saved. (placeholder)")
+            save_game(game)
+            self.say(["Game saved."])
         elif tile == "B" and game.current.boss:
             game.show(f"BOSS BATTLE: {game.current.boss['enemy_id']}! (placeholder)")
         elif tile == "g":
@@ -299,8 +300,12 @@ class ExploreState(State):
             for flag in to_set:
                 self.game.flags[flag] = True
 
+        self.say(entry["lines"], on_close=apply_sets)
+
+    def say(self, lines, on_close=None):
+        """Open the dialogue box on these lines. Walking waits until it closes."""
         self.game.message = ""
-        self.game.states.push(DialogueState(self.game, entry["lines"], on_close=apply_sets))
+        self.game.states.push(DialogueState(self.game, lines, on_close=on_close))
 
     def change_map(self, door):
         game = self.game
@@ -348,7 +353,7 @@ class MenuState(State):
 
     def enabled(self, index):
         if self.OPTIONS[index] == "Load Game":
-            return os.path.exists(os.path.join(settings.ROOT, "save.json"))
+            return has_save()
         return True
 
     def move(self, direction):
@@ -369,8 +374,7 @@ class MenuState(State):
         if choice == "New Game":
             self.game.new_game()
         elif choice == "Load Game":
-            # save.json reading lands with the save-point commit.
-            pass
+            load_game(self.game)
         elif choice == "Quit":
             return False
         return True
