@@ -40,6 +40,7 @@ or turning point. Finish Chapter 1 fully before planning later chapters in detai
 
 **M1.6: Chapter intro screen**
 - [ ] Chapter intro state: chapter title card ("Chapter One: The Master"), then a few pages of story text (fade in, Z to advance), then load the first map, Developer
+- [ ] Esc skips the intro; Load Game bypasses it
 - [ ] Intro text stored as data in `data/chapter1/intro.json` (`title`, `pages`), so it can be rewritten without touching code
 - [ ] Intro text drafted by Planner, approved by Dyllan
 
