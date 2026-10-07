@@ -52,6 +52,20 @@ def walk_through_door(game, door_xy):
     print(f"  {src.name} {door_xy} -> {game.current.name} at {(game.player.x, game.player.y)}  OK")
 
 
+def check_cave_lock(game, door_xy):
+    """The cave door stays shut until 'talked_to_elder' is set."""
+    assert not game.flags.get("talked_to_elder")
+    steps = path_to(game.current, (game.player.x, game.player.y), door_xy)
+    for dx, dy in steps[:-1]:
+        game.step(dx, dy)
+    before = (game.player.x, game.player.y)
+    game.step(*steps[-1])
+    assert game.current.name == "town" and (game.player.x, game.player.y) == before, "cave should be locked"
+    assert "locked" in game.message.lower(), game.message
+    print(f"  town {door_xy} locked without 'talked_to_elder'  OK")
+    game.flags["talked_to_elder"] = True  # stand-in for talking to the elder
+
+
 def main():
     random.seed(1)
     names = sorted(f[:-4] for f in os.listdir(settings.MAPS_DIR) if f.endswith(".txt"))
@@ -65,9 +79,12 @@ def main():
              ("dungeon", (38, 21)), ("boss_room", (0, 8)), ("dungeon", (7, 29))]
     for map_name, door_xy in route:
         assert game.current.name == map_name, game.current.name
+        if (map_name, door_xy) == ("town", (19, 1)):
+            check_cave_lock(game, door_xy)
         walk_through_door(game, door_xy)
 
-    # Every door in every map, teleporting next to it first.
+    # Every door in every map, teleporting next to it first (all flags set).
+    game.flags["talked_to_elder"] = True
     for n in names:
         for door_xy, door in GameMap(n).doors.items():
             game.current = game.get_map(n)

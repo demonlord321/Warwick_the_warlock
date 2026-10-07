@@ -35,6 +35,15 @@ class GameMap:
             if x != -1:
                 self.player_start = (x, y)
 
+    def door_locked(self, door, flags):
+        """True if this door needs a story flag that isn't set yet.
+
+        Doors may carry an optional "requires_flag" (the flag that unlocks it)
+        and "locked_key" (the dialogue key to show while it's locked).
+        """
+        flag = door.get("requires_flag")
+        return bool(flag) and not flags.get(flag)
+
     def in_bounds(self, x, y):
         return 0 <= x < self.width and 0 <= y < self.height
 

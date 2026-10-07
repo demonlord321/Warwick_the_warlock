@@ -2,7 +2,8 @@
   "display_name": "Willowbrook Village",
   "doors": [
     {"x": 9,  "y": 11, "target_map": "house",   "spawn_x": 10, "spawn_y": 13},
-    {"x": 19, "y": 1,  "target_map": "dungeon", "spawn_x": 7,  "spawn_y": 28}
+    {"x": 19, "y": 1,  "target_map": "dungeon", "spawn_x": 7,  "spawn_y": 28,
+     "requires_flag": "talked_to_elder", "locked_key": "cave_locked"}
   ],
   "npcs": [
     {"x": 21, "y": 4,  "id": "cave_guard",  "dialogue_key": "guard_warning"},

@@ -9,6 +9,9 @@ Checks:
   * every door has a reverse door, and the spawn is right next to it (inward side)
   * doors line up spatially: a door on the north side of one map leads to a
     door on the south side of the next (east <-> west, etc.)
+  * locked doors: "requires_flag" / "locked_key" are non-empty strings, a
+    locked_key only appears with a requires_flag, and (once dialogue.json exists)
+    the locked_key is a real dialogue key and some dialogue entry sets the flag
   * NPC / boss coordinates match 'N' / 'B' tiles (and vice versa)
   * exactly one 'P', and it is in the start map
   * every door, save point, boss, chest and NPC can actually be reached
@@ -24,6 +27,29 @@ MAPS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "maps")
 START_MAP = "town"
 LEGEND = set("#.PNDgT~SCB")
 SOLID = set("#NTC~")
+
+
+DIALOGUE_PATHS = [os.path.join(os.path.dirname(MAPS_DIR), p)
+                  for p in ("dialogue.json", os.path.join("data", "dialogue.json"))]
+
+
+def load_dialogue():
+    """Return (path, data) for dialogue.json if the project has one yet, else (None, None)."""
+    for path in DIALOGUE_PATHS:
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                return path, json.load(f)
+    return None, None
+
+
+def flags_set_by(dialogue):
+    """Every flag that some dialogue entry can set."""
+    out = set()
+    for entries in (dialogue or {}).values():
+        for entry in entries if isinstance(entries, list) else [entries]:
+            sets = entry.get("sets", []) if isinstance(entry, dict) else []
+            out |= set(sets.keys() if isinstance(sets, dict) else sets)
+    return out
 
 
 def load_all():
@@ -82,6 +108,9 @@ def validate():
     if START_MAP not in maps:
         return [f"start map '{START_MAP}' not found"], warnings
 
+    dialogue_path, dialogue = load_dialogue()
+    settable = flags_set_by(dialogue)
+
     p_count = 0
     for name, (rows, meta) in maps.items():
         err = lambda msg: errors.append(f"[{name}] {msg}")
@@ -113,6 +142,24 @@ def validate():
         for pos in door_pos - d_tiles:
             err(f"JSON door at {pos} is not on a 'D' tile")
         for d in meta.get("doors", []):
+            # Locked doors (optional fields)
+            flag, lkey = d.get("requires_flag"), d.get("locked_key")
+            where = f"door {(d['x'], d['y'])}"
+            if flag is not None and (not isinstance(flag, str) or not flag):
+                err(f"{where}: requires_flag must be a non-empty string")
+            if lkey is not None and (not isinstance(lkey, str) or not lkey):
+                err(f"{where}: locked_key must be a non-empty string")
+            if lkey and not flag:
+                err(f"{where}: has a locked_key but no requires_flag, so it can never be locked")
+            if flag and not lkey:
+                warnings.append(f"[{name}] {where}: requires_flag without locked_key "
+                                f"(players get no message when it's locked)")
+            if flag and dialogue is not None:
+                if lkey and lkey not in dialogue:
+                    err(f"{where}: locked_key '{lkey}' is not in {os.path.basename(dialogue_path)}")
+                if flag not in settable:
+                    err(f"{where}: needs flag '{flag}' but no dialogue entry sets it "
+                        f"(the door could never open)")
             tgt = d["target_map"]
             spawn = (d["spawn_x"], d["spawn_y"])
             if tgt not in maps or maps[tgt][1] is None:
@@ -235,8 +282,11 @@ def main():
             t_rows = maps[d["target_map"]][0]
             back = [b for b in maps[d["target_map"]][1]["doors"]
                     if inward_tile(t_rows, b["x"], b["y"]) == (d["spawn_x"], d["spawn_y"])][0]
+            lock = f"  [locked until '{d['requires_flag']}']" if d.get("requires_flag") else ""
             print(f"  {name} {d['x'], d['y']} go {door_side(rows, d['x'], d['y'])} -> "
-                  f"arrive at {d['target_map']} {back['x'], back['y']} (its return door goes {door_side(t_rows, back['x'], back['y'])})")
+                  f"arrive at {d['target_map']} {back['x'], back['y']} (its return door goes {door_side(t_rows, back['x'], back['y'])}){lock}")
+    if load_dialogue()[0] is None:
+        print("Note: no dialogue.json yet, so locked_key / flag checks against dialogue were skipped.")
 
 
 if __name__ == "__main__":

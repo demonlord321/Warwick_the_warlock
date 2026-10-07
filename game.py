@@ -26,6 +26,7 @@ class Game:
 
         self.maps = {}               # cache: name -> GameMap
         self.opened_chests = set()   # (map_name, x, y)
+        self.flags = {}              # story flags, e.g. {"talked_to_elder": True}
         self.camera = Camera()
         self.message = ""
         self.message_until = 0
@@ -71,6 +72,13 @@ class Game:
                 self.opened_chests.add(key)
                 self.show("You opened the chest! (item placeholder)")
             return
+
+        # Locked doors (need a story flag) block you like a wall.
+        if tile == "D":
+            door = self.current.doors[target]
+            if self.current.door_locked(door, self.flags):
+                self.show(f"It's locked. [dialogue '{door.get('locked_key', '?')}']")
+                return
 
         if not self.player.try_move(dx, dy, self.current):
             return  # blocked by a wall, tree, water...

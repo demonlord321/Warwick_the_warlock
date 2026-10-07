@@ -30,7 +30,9 @@ No other characters are used.
 ```json
 {
   "display_name": "Willowbrook Village",
-  "doors": [{"x": 9, "y": 11, "target_map": "house", "spawn_x": 10, "spawn_y": 13}],
+  "doors": [{"x": 9, "y": 11, "target_map": "house", "spawn_x": 10, "spawn_y": 13},
+            {"x": 19, "y": 1, "target_map": "dungeon", "spawn_x": 7, "spawn_y": 28,
+             "requires_flag": "talked_to_elder", "locked_key": "cave_locked"}],
   "npcs": [{"x": 24, "y": 16, "id": "elder", "dialogue_key": "elder_intro"}],
   "encounters": {"rate": 0.08, "enemy_pool": ["slime", "field_rat"]},
   "boss": null
@@ -44,6 +46,13 @@ No other characters are used.
   below it is walked through going north). If you leave one map going north, you arrive in the next
   map at a door you'd walk through going south to come back (north ↔ south, east ↔ west).
   Each `D` sits in a wall with exactly one open neighbour.
+* Doors can be **locked by a story flag** with two optional fields:
+  `"requires_flag": "talked_to_elder"` (the door won't open until `flags["talked_to_elder"]` is true)
+  and `"locked_key": "cave_locked"` (the `dialogue.json` key shown when you bump the locked door).
+  A locked door blocks you like a wall. The validator checks both are non-empty strings, that a
+  `locked_key` never appears without a `requires_flag`, and, once `dialogue.json` exists (project root
+  or `data/`), that the `locked_key` is a real dialogue key and some dialogue entry `sets` the flag.
+  Only lock one side of a pair: the town's cave mouth is locked, the dungeon's way back out is not.
 * `encounters.rate` is the chance (0–1) per step on `g`. Use `{"rate": 0.0, "enemy_pool": []}` for safe maps.
 * `boss`: `{"x", "y", "enemy_id"}` matching the single `B` tile, or `null`.
 
@@ -51,7 +60,7 @@ No other characters are used.
 
 | File | Name | Size | Connections |
 |------|------|------|-------------|
-| `town` | Willowbrook Village | 40x30 | house door (9,11), go north ↔ house; cave mouth (19,1), go north ↔ dungeon |
+| `town` | Willowbrook Village | 40x30 | house door (9,11), go north ↔ house; cave mouth (19,1), go north ↔ dungeon (locked until `talked_to_elder`) |
 | `house` | Your House | 20x15 | front door (10,14) on south wall, go south ↔ town |
 | `dungeon` | Mossy Caverns (3 rooms) | 40x30 | exit (7,29) on south wall ↔ town; sealed door (38,21) on east wall ↔ boss_room |
 | `boss_room` | Warden's Chamber | 30x17 | door (0,8) on west wall ↔ dungeon; throne/boss on the east side |
